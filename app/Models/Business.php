@@ -47,6 +47,15 @@ class Business extends Model
         'longitude' => 'float',
     ];
 
+    protected static function booted(): void
+    {
+        static::creating(function (Business $business): void {
+            if (empty($business->features)) {
+                $business->features = static::defaultFeaturesForBranch($business->branch);
+            }
+        });
+    }
+
     public static function generateUniqueSlug(string $name): string
     {
         $base = Str::slug($name);

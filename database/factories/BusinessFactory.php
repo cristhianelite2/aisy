@@ -24,7 +24,7 @@ class BusinessFactory extends Factory
             'primary_color' => '#0ea5e9',
             'secondary_color' => '#6366f1',
             'style_preset' => 'moderno',
-            'features' => Business::defaultFeaturesForBranch($branch),
+            'features' => null,
             'ai_memory_semantic' => [
                 'tone' => 'cercano, práctico y orientado a ventas',
             ],
