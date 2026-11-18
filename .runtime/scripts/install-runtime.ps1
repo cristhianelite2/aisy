@@ -71,18 +71,22 @@ if (-not (Test-Path -LiteralPath $venvPy)) {
     & $venvPy -m pip install --upgrade pip setuptools wheel
 }
 
-$odooCheck = & $venvPy -c "import werkzeug, psycopg2, lxml, babel, PIL, reportlab, dateutil, jinja2, markupsafe, passlib, polib, requests, decorator, psutil, yaml, libsass" 2>&1
-if ($LASTEXITCODE -ne 0) {
+$oldEA = $ErrorActionPreference
+$ErrorActionPreference = 'SilentlyContinue'
+$odooCheck = & $venvPy -c "import werkzeug, psycopg2, lxml, babel, PIL, reportlab, dateutil, jinja2, markupsafe, passlib, polib, requests, decorator, psutil, yaml, sass" 2>&1
+$importExit = $LASTEXITCODE
+$ErrorActionPreference = $oldEA
+if ($importExit -ne 0) {
     Write-Host "Installing Odoo 17 Python dependencies..."
     & $venvPip install `
         "Babel>=2.9.1" "chardet>=4.0.0" "cryptography>=41.0.0" "decorator>=4.4.2" "docutils>=0.17" `
         "freezegun>=1.1.0" "geoip2>=2.9.0" "idna>=2.10" "Jinja2>=3.1.2" "libsass>=0.22.0" `
-        "lxml>=4.9.3" "MarkupSafe>=2.1.2" "num2words>=0.5.12" "ofxparse>=0.21" "passlib>=1.7.4" `
+        "lxml>=4.9.3" "lxml_html_clean" "MarkupSafe>=2.1.2" "num2words>=0.5.12" "ofxparse>=0.21" "passlib>=1.7.4" `
         "Pillow>=10.0.0" "polib>=1.1.1" "psutil>=5.9.0" "psycopg2-binary>=2.9.9" "pyOpenSSL>=23.0.0" `
         "PyPDF2>=2.12.1" "pyserial>=3.5" "python-dateutil>=2.8.2" "python-stdnum>=1.18" `
         "pytz>=2023.3" "PyYAML>=6.0.1" "qrcode>=7.4.2" "reportlab>=4.0.4" "requests>=2.31.0" `
         "urllib3>=1.26.18,<2.1" "vobject>=0.9.6.1" "Werkzeug==2.3.8" "xlrd>=2.0.1" `
-        "XlsxWriter>=3.1.2" "xlwt>=1.3.0" "zeep>=4.2.1" "rjsmin>=1.2.1" "asn1crypto>=1.5.1"
+        "XlsxWriter>=3.1.2" "xlwt>=1.3.0" "zeep>=4.2.1" "rjsmin>=1.2.1" "asn1crypto>=1.5.1" "pywin32>=306"
     if ($LASTEXITCODE -ne 0) { throw "Failed to install Python dependencies" }
 }
 
@@ -105,7 +109,7 @@ without_demo = all
 limit_time_cpu = 120
 limit_time_real = 240
 "@
-Set-Content -LiteralPath $OdooConf -Value $confContent -Encoding UTF8
+[System.IO.File]::WriteAllText($OdooConf, $confContent, (New-Object System.Text.UTF8Encoding($false)))
 
 $irModuleExists = & $psql -h 127.0.0.1 -p 5439 -U odoo -d aisy_erp -tAc "SELECT to_regclass('public.ir_module_module')" 2>$null
 if (-not $irModuleExists -or $irModuleExists.Trim() -eq '') {
