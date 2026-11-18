@@ -1,0 +1,38 @@
+# Runtime binaries & data (portable, excluded from repo)
+.runtime/pgsql/
+.runtime/pgsql-data/
+.runtime/odoo/
+.runtime/odoo-venv/
+.runtime/odoo.conf
+.runtime/odoo.log
+.runtime/pgsql.log
+.runtime/wa-gateway/node_modules/
+.runtime/wa-gateway/sessions/
+.runtime/wa-gateway/wa-gateway.log
+.runtime/downloads/
+
+# SDD scratchpad
+.superpowers/
+
+# Laravel
+/node_modules
+/public/build
+/public/hot
+/public/storage
+/storage/*.key
+/storage/pail
+/vendor
+.env
+.env.backup
+.env.production
+.phpunit.result.cache
+Homestead.json
+Homestead.yaml
+auth.json
+npm-debug.log
+yarn-error.log
+/.fleet
+/.idea
+/.nova
+/.vscode
+/.zed
