@@ -16,7 +16,19 @@ use Illuminate\View\View;
 
 class BusinessAdminController extends Controller
 {
+    private function authorizeBusiness(Request $request, Business $business): void
+    {
+        $user = $request->user();
+        if (!$user) {
+            abort(401);
+        }
+        if ($business->user_id !== null && $business->user_id !== $user->id && !$user->is_admin) {
+            abort(403, 'No tienes permiso para administrar este negocio.');
+        }
+    }
+
     public function dashboard(
+        Request $request,
         string $slug,
         OdooBusinessService $odoo,
         AiMemoryService $memory,
@@ -25,6 +37,7 @@ class BusinessAdminController extends Controller
         GoogleMapsKitService $gmaps
     ): View {
         $business = Business::where('slug', $slug)->firstOrFail();
+        $this->authorizeBusiness($request, $business);
         $metrics = $odoo->getBusinessMetrics($business);
         $catalog = $business->catalogItems()->latest()->get();
         $operations = $business->operations()->latest()->limit(20)->get();
@@ -54,6 +67,7 @@ class BusinessAdminController extends Controller
     public function toggleFeature(Request $request, string $slug): JsonResponse
     {
         $business = Business::where('slug', $slug)->firstOrFail();
+        $this->authorizeBusiness($request, $business);
         $feature = (string) $request->input('feature', '');
         $enabled = $request->has('enabled') ? (bool) $request->boolean('enabled') : null;
 
@@ -70,6 +84,7 @@ class BusinessAdminController extends Controller
     public function assistantChat(Request $request, string $slug, AisyAssistantService $assistant): JsonResponse
     {
         $business = Business::where('slug', $slug)->firstOrFail();
+        $this->authorizeBusiness($request, $business);
 
         $result = $assistant->handleOwnerInput($business, [
             'text' => $request->input('text'),
@@ -82,17 +97,19 @@ class BusinessAdminController extends Controller
         return response()->json($result);
     }
 
-    public function whatsappQr(string $slug, WhatsAppGatewayClient $whatsapp): JsonResponse
+    public function whatsappQr(Request $request, string $slug, WhatsAppGatewayClient $whatsapp): JsonResponse
     {
         $business = Business::where('slug', $slug)->firstOrFail();
+        $this->authorizeBusiness($request, $business);
         $whatsapp->createInstance($business);
 
         return response()->json($whatsapp->getQrCode($business));
     }
 
-    public function triggerDeadTimes(string $slug, DeadTimeRecommendationService $deadTime): JsonResponse
+    public function triggerDeadTimes(Request $request, string $slug, DeadTimeRecommendationService $deadTime): JsonResponse
     {
         $business = Business::where('slug', $slug)->firstOrFail();
+        $this->authorizeBusiness($request, $business);
 
         return response()->json($deadTime->analyzeAndRecommend($business, true));
     }
@@ -100,6 +117,7 @@ class BusinessAdminController extends Controller
     public function addCatalogItem(Request $request, string $slug, OdooBusinessService $odoo): JsonResponse
     {
         $business = Business::where('slug', $slug)->firstOrFail();
+        $this->authorizeBusiness($request, $business);
         $item = $odoo->syncCatalogItem($business, [
             'name' => (string) $request->input('name', 'Nuevo Ítem'),
             'price' => (float) $request->input('price', 100),
@@ -112,6 +130,7 @@ class BusinessAdminController extends Controller
     public function updateOperationStatus(Request $request, string $slug, int $id): JsonResponse
     {
         $business = Business::where('slug', $slug)->firstOrFail();
+        $this->authorizeBusiness($request, $business);
         $op = $business->operations()->findOrFail($id);
         $op->status = (string) $request->input('status', 'completed');
         $op->save();

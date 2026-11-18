@@ -3,10 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\Business;
+use App\Models\User;
 use App\Services\Integrations\WhatsAppGatewayClient;
 use App\Services\Provisioning\BusinessProvisionerService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -35,7 +39,20 @@ class OnboardingController extends Controller
         $slug = Business::generateUniqueSlug($data['name']);
         $phone = preg_replace('/\D+/', '', $data['owner_phone']);
 
+        $user = $request->user();
+        if (!$user) {
+            $user = User::firstOrCreate(
+                ['email' => ($phone ?: $slug) . '@aisy.local'],
+                [
+                    'name' => $data['owner_name'],
+                    'password' => Hash::make(Str::random(24)),
+                ]
+            );
+            Auth::login($user);
+        }
+
         $business = Business::create([
+            'user_id' => $user->id,
             'name' => $data['name'],
             'slug' => $slug,
             'branch' => $data['branch'],

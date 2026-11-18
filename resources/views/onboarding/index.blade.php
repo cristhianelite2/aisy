@@ -16,6 +16,17 @@
                 Llena estos datos básicos. Nosotros creamos tu empresa aislada en Odoo, tu página web personalizada, tu panel de control modular y tu asistente de ventas por WhatsApp.
             </p>
         </div>
+        <div class="flex items-center gap-3">
+            @auth
+                <span class="text-xs font-semibold text-slate-600">{{ auth()->user()->name }}</span>
+                <form action="{{ route('logout') }}" method="POST">
+                    @csrf
+                    <button type="submit" class="px-3.5 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-bold cursor-pointer">Cerrar sesión</button>
+                </form>
+            @else
+                <a href="{{ route('login') }}" class="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold">Iniciar sesión</a>
+            @endauth
+        </div>
     </header>
 
     <div class="grid lg:grid-cols-5 gap-8">

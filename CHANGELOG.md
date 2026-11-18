@@ -1,5 +1,11 @@
 # Changelog — Aisy
 
+## [0.2.0] - 2026-11-18
+### Added
+- **Autenticación y Seguridad**: Login (`/login`, `/logout`), protección por propiedad de negocio (`user_id` + `is_admin`) en `/{slug}/admin*`, middleware `SecurityHeaders` (`X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `X-XSS-Protection`) y rate limiting (`throttle`) en login, onboarding, eventos y webhook de WhatsApp.
+- **4 Seeders Demo (`AisyDemoSeeder`)**: Usuario demo `demo@aisy.ceballosleon.com` y 4 negocios en distintas fases (`estetica-aura-nueva`, `salon-lumiere`, `boutique-nube`, `taqueria-don-pepe`).
+- **Autostart Tunnel Manager**: Registro de `aisy` en `autostart` local y túnel Cloudflare para mantener `https://aisy.ceballosleon.com` activo.
+
 ## [0.1.0] - 2026-11-18
 ### Added
 - **Entorno Portable Autocontenido (`.runtime/`)**: PostgreSQL 16 (`127.0.0.1:5439`), Odoo 17.0 Community (`127.0.0.1:8069`, base única `aisy_erp` Multi-Company) y Gateway WhatsApp Web QR con Baileys (`127.0.0.1:8085`).
