@@ -2,6 +2,11 @@
 
 @section('title', 'Aisy — Crea tu negocio en 1 minuto')
 
+@push('head')
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+@endpush
+
 @section('content')
 <div class="max-w-5xl mx-auto px-4 py-10">
     <header class="flex flex-wrap items-center justify-between gap-4 mb-10">
@@ -91,10 +96,34 @@
                     </div>
                 </div>
 
-                <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-1">Dirección del local</label>
-                    <input type="text" name="address" value="{{ old('address') }}" placeholder="Ej. Av. Insurgentes Sur 800, CDMX"
-                        class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+                <div class="space-y-2.5">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <label class="block text-sm font-semibold text-slate-700">Dirección del local (OpenStreetMap)</label>
+                        <button type="button" id="btn-geolocate" onclick="autoDetectLocation()"
+                            class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-700 text-xs font-bold border border-sky-200 cursor-pointer">
+                            📍 Autodetectar mi ubicación
+                        </button>
+                    </div>
+
+                    <div class="relative">
+                        <div class="flex gap-2">
+                            <input type="text" id="address-search" placeholder="Buscar calle, colonia o ciudad..."
+                                class="flex-1 rounded-xl border border-slate-300 px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+                            <button type="button" onclick="searchAddress()"
+                                class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold cursor-pointer">
+                                🔍 Buscar
+                            </button>
+                        </div>
+                        <div id="address-results" class="hidden absolute z-30 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-y-auto divide-y divide-slate-100"></div>
+                    </div>
+
+                    <input type="text" name="address" id="address-input" value="{{ old('address') }}" placeholder="Dirección confirmada (puedes ajustarla manualmente)"
+                        class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500">
+                    <input type="hidden" name="latitude" id="lat-input" value="{{ old('latitude') }}">
+                    <input type="hidden" name="longitude" id="lng-input" value="{{ old('longitude') }}">
+
+                    <div id="osm-map" class="w-full h-48 rounded-xl border border-slate-200 z-10"></div>
+                    <p id="geo-status" class="text-[11px] text-slate-500">Arrastra el pin o busca tu dirección para guardar coordenadas exactas.</p>
                 </div>
 
                 <div class="grid grid-cols-3 gap-4">
@@ -154,3 +183,117 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+(function () {
+    const defaultLat = parseFloat(document.getElementById('lat-input').value) || 19.4326;
+    const defaultLng = parseFloat(document.getElementById('lng-input').value) || -99.1332;
+    const statusEl = document.getElementById('geo-status');
+    const addrInput = document.getElementById('address-input');
+    const searchInput = document.getElementById('address-search');
+    const resultsBox = document.getElementById('address-results');
+    const latInput = document.getElementById('lat-input');
+    const lngInput = document.getElementById('lng-input');
+
+    const map = L.map('osm-map').setView([defaultLat, defaultLng], 14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+
+    const marker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(map);
+
+    function setCoords(lat, lng, updateAddress = true) {
+        latInput.value = Number(lat).toFixed(6);
+        lngInput.value = Number(lng).toFixed(6);
+        marker.setLatLng([lat, lng]);
+        map.setView([lat, lng], 16);
+        if (updateAddress) reverseGeocode(lat, lng);
+    }
+
+    async function reverseGeocode(lat, lng) {
+        statusEl.textContent = 'Obteniendo dirección exacta...';
+        try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`, {
+                headers: { 'Accept-Language': 'es' }
+            });
+            const data = await res.json();
+            if (data && data.display_name) {
+                addrInput.value = data.display_name;
+                statusEl.textContent = `📍 Ubicación detectada (${Number(lat).toFixed(5)}, ${Number(lng).toFixed(5)})`;
+            }
+        } catch {
+            statusEl.textContent = `📍 Coordenadas listas (${Number(lat).toFixed(5)}, ${Number(lng).toFixed(5)})`;
+        }
+    }
+
+    marker.on('dragend', () => {
+        const pos = marker.getLatLng();
+        setCoords(pos.lat, pos.lng, true);
+    });
+
+    window.autoDetectLocation = function () {
+        if (!navigator.geolocation) {
+            statusEl.textContent = 'Tu navegador no soporta geolocalización; usa el buscador.';
+            return;
+        }
+        statusEl.textContent = 'Detectando tu ubicación actual...';
+        navigator.geolocation.getCurrentPosition(
+            (pos) => setCoords(pos.coords.latitude, pos.coords.longitude, true),
+            () => { statusEl.textContent = 'No se pudo obtener permiso GPS; busca tu dirección manualmente.'; },
+            { enableHighAccuracy: true, timeout: 8000 }
+        );
+    };
+
+    window.searchAddress = async function () {
+        const q = searchInput.value.trim();
+        if (q.length < 3) return;
+        statusEl.textContent = 'Buscando direcciones...';
+        try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=5&q=${encodeURIComponent(q)}`, {
+                headers: { 'Accept-Language': 'es' }
+            });
+            const list = await res.json();
+            resultsBox.innerHTML = '';
+            if (!list.length) {
+                resultsBox.innerHTML = '<div class="p-3 text-xs text-slate-500">Sin resultados. Intenta con calle y ciudad.</div>';
+            } else {
+                list.forEach((item) => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'w-full text-left px-3.5 py-2.5 text-xs hover:bg-sky-50 text-slate-800 cursor-pointer';
+                    btn.textContent = item.display_name;
+                    btn.onclick = () => {
+                        addrInput.value = item.display_name;
+                        setCoords(parseFloat(item.lat), parseFloat(item.lon), false);
+                        resultsBox.classList.add('hidden');
+                        statusEl.textContent = `📍 Dirección seleccionada (${Number(item.lat).toFixed(5)}, ${Number(item.lon).toFixed(5)})`;
+                    };
+                    resultsBox.appendChild(btn);
+                });
+            }
+            resultsBox.classList.remove('hidden');
+        } catch {
+            statusEl.textContent = 'Error al consultar el buscador de direcciones.';
+        }
+    };
+
+    searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            window.searchAddress();
+        }
+    });
+
+    // Auto-detect gently on initial load if no address yet
+    if (!addrInput.value && navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (pos) => setCoords(pos.coords.latitude, pos.coords.longitude, true),
+            () => {},
+            { timeout: 5000 }
+        );
+    }
+})();
+</script>
+@endpush

@@ -22,10 +22,14 @@ class OnboardingAndLayersTest extends TestCase
             'secondary_color' => '#8b5cf6',
             'style_preset' => 'moderno',
             'address' => 'Av. Insurgentes Sur 800, CDMX',
+            'latitude' => 19.391234,
+            'longitude' => -99.171234,
         ]);
 
         $business = Business::where('slug', 'salon-glam-sofia')->firstOrFail();
         $response->assertRedirect("/nuevo/{$business->slug}/progreso");
+        $this->assertEqualsWithDelta(19.391234, (float) $business->latitude, 0.0001);
+        $this->assertEqualsWithDelta(-99.171234, (float) $business->longitude, 0.0001);
 
         // Run provisioner steps
         app(BusinessProvisionerService::class)->runAllSteps($business);

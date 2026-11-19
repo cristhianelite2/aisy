@@ -1,5 +1,10 @@
 # Changelog — Aisy
 
+## [0.2.1] - 2026-11-18
+### Added
+- **Landing Pages Completas y Modernas por Giro (`/{slug}`)**: Rediseño integral con navbar glassmórfica, hero animado con gradientes dinámicos de marca (`primary_color`, `secondary_color`), SVG grid, pilares de valor, galería visual por rubro, promociones destacadas, catálogo interactivo, reseñas, mapa de ubicación y animaciones scroll-reveal.
+- **Mapa Interactivo OpenStreetMap (Leaflet + Nominatim)**: Buscador de direcciones con autocompletado, pin arrastrable, autodetección de ubicación GPS (`navigator.geolocation` + geocodificación inversa) y guardado de `latitude`/`longitude` en el onboarding (`/nuevo`), además de mapa embebido y botón "Cómo llegar" en las Landings (`/{slug}`).
+
 ## [0.2.0] - 2026-11-18
 ### Added
 - **Autenticación y Seguridad**: Login (`/login`, `/logout`), protección por propiedad de negocio (`user_id` + `is_admin`) en `/{slug}/admin*`, middleware `SecurityHeaders` (`X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `X-XSS-Protection`) y rate limiting (`throttle`) en login, onboarding, eventos y webhook de WhatsApp.

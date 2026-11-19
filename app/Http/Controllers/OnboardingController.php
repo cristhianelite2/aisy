@@ -34,6 +34,8 @@ class OnboardingController extends Controller
             'secondary_color' => 'nullable|string|max:20',
             'style_preset' => 'nullable|string|max:32',
             'address' => 'nullable|string|max:255',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
         ]);
 
         $slug = Business::generateUniqueSlug($data['name']);
@@ -59,6 +61,8 @@ class OnboardingController extends Controller
             'owner_name' => $data['owner_name'],
             'owner_phone' => $phone,
             'address' => $data['address'] ?: 'Dirección por confirmar',
+            'latitude' => isset($data['latitude']) ? (float) $data['latitude'] : null,
+            'longitude' => isset($data['longitude']) ? (float) $data['longitude'] : null,
             'primary_color' => $data['primary_color'] ?: '#0ea5e9',
             'secondary_color' => $data['secondary_color'] ?: '#6366f1',
             'style_preset' => $data['style_preset'] ?: 'moderno',
