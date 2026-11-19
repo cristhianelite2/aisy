@@ -182,7 +182,134 @@
                 </form>
             </section>
         @endif
+
+        @if($business->isFeatureEnabled('menu_qr'))
+            <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
+                <h2 class="font-bold text-slate-900">📱 Menú Digital QR</h2>
+                <p class="text-xs text-slate-500">Comparte tu menú interactivo en mesas: <a href="{{ route('business.landing', ['slug' => $business->slug]) }}#catalogo" target="_blank" class="text-sky-600 font-semibold underline">Abrir Menú</a></p>
+                <form onsubmit="submitCatalogItem(event, 'Platillo')" class="space-y-2.5 text-xs">
+                    <input type="text" id="cat-name-qr" required placeholder="Nuevo platillo o bebida" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                    <input type="number" id="cat-price-qr" value="120" step="0.01" placeholder="Precio ($)" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                    <button type="submit" class="w-full py-2 rounded-xl bg-slate-900 text-white font-bold cursor-pointer">Agregar al Menú QR</button>
+                </form>
+            </section>
+        @endif
+
+        @if($business->isFeatureEnabled('catalogo_web'))
+            <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
+                <h2 class="font-bold text-slate-900">📦 Catálogo e Inventario</h2>
+                <p class="text-xs text-slate-500">Productos activos: <strong>{{ $catalog->count() }}</strong></p>
+                <form onsubmit="submitCatalogItem(event, 'General')" class="space-y-2.5 text-xs">
+                    <input type="text" id="cat-name-web" required placeholder="Nombre del producto" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                    <input type="number" id="cat-price-web" value="199" step="0.01" placeholder="Precio ($)" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                    <button type="submit" class="w-full py-2 rounded-xl bg-slate-900 text-white font-bold cursor-pointer">Agregar Producto</button>
+                </form>
+            </section>
+        @endif
+
+        @if($business->isFeatureEnabled('estadisticas'))
+            @php
+                $avgTicket = $metrics['orders_today'] > 0 ? ($metrics['sales_today'] / $metrics['orders_today']) : 0;
+            @endphp
+            <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
+                <h2 class="font-bold text-slate-900">📈 Estadísticas e Insights IA</h2>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                        <div class="text-slate-500">Ticket Promedio</div>
+                        <div class="text-lg font-extrabold text-slate-900">${{ number_format($avgTicket, 2) }}</div>
+                    </div>
+                    <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                        <div class="text-slate-500">Ítems Activos</div>
+                        <div class="text-lg font-extrabold text-slate-900">{{ $metrics['catalog_count'] }}</div>
+                    </div>
+                </div>
+                <button type="button" onclick="quickPrompt('Dame un análisis de mis ventas y qué promocionar hoy')" class="w-full py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold cursor-pointer">
+                    Pedir Análisis a la IA →
+                </button>
+            </section>
+        @endif
     </div>
+
+    {{-- Comandas: Pantalla de Cocina (KDS) y Control de Mesas --}}
+    @if($business->isFeatureEnabled('comandas_kds') || $business->isFeatureEnabled('mesas'))
+        <div class="grid lg:grid-cols-2 gap-6">
+            @if($business->isFeatureEnabled('comandas_kds'))
+                @php
+                    $kdsOrders = $operations->where('operation_type', 'comanda')->whereIn('status', ['pending', 'preparing', 'ready']);
+                @endphp
+                <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
+                    <h2 class="font-bold text-slate-900">🍳 Pantalla de Cocina (KDS)</h2>
+                    @if($kdsOrders->isEmpty())
+                        <p class="text-xs text-slate-500">No hay comandas activas en cocina.</p>
+                    @else
+                        <div class="space-y-2.5">
+                            @foreach($kdsOrders as $kds)
+                                <div class="p-3 rounded-xl border border-slate-200 bg-slate-50 flex flex-wrap items-center justify-between gap-2 text-xs">
+                                    <div>
+                                        <div class="font-bold text-slate-900">Ref. #{{ $kds->odoo_record_id ?? $kds->id }} · {{ $kds->table_label ?: $kds->customer_name }}</div>
+                                        <div class="text-slate-600">${{ number_format($kds->total_amount, 2) }} · {{ $statusLabels[$kds->status] ?? $kds->status }}</div>
+                                    </div>
+                                    <div class="flex gap-1.5">
+                                        @if($kds->status !== 'ready')
+                                            <button type="button" onclick="updateOpStatus({{ $kds->id }}, 'ready')" class="px-2.5 py-1 rounded-lg bg-amber-500 text-white font-bold cursor-pointer">Marcar Lista</button>
+                                        @endif
+                                        <button type="button" onclick="updateOpStatus({{ $kds->id }}, 'completed')" class="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-bold cursor-pointer">Entregada</button>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+                </section>
+            @endif
+
+            @if($business->isFeatureEnabled('mesas'))
+                <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
+                    <h2 class="font-bold text-slate-900">🪑 Control de Mesas</h2>
+                    <div class="grid grid-cols-3 gap-3 text-xs">
+                        @for($m = 1; $m <= 6; $m++)
+                            @php
+                                $tableName = "Mesa {$m}";
+                                $activeTable = $operations->where('operation_type', 'comanda')->where('table_label', $tableName)->whereIn('status', ['pending', 'preparing', 'ready'])->first();
+                            @endphp
+                            <button type="button" onclick="selectTable('{{ $tableName }}')"
+                                class="p-3 rounded-xl border text-left cursor-pointer {{ $activeTable ? 'bg-amber-50 border-amber-300' : 'bg-slate-50 border-slate-200 hover:bg-slate-100' }}">
+                                <div class="font-bold text-slate-900">{{ $tableName }}</div>
+                                <div class="text-[11px] {{ $activeTable ? 'text-amber-800 font-semibold' : 'text-slate-500' }}">
+                                    {{ $activeTable ? 'Ocupada ($' . number_format($activeTable->total_amount, 0) . ')' : 'Libre' }}
+                                </div>
+                            </button>
+                        @endfor
+                    </div>
+                </section>
+            @endif
+        </div>
+    @endif
+
+    {{-- Gestión de Envíos (Tienda) --}}
+    @if($business->isFeatureEnabled('envios'))
+        @php
+            $shipOrders = $operations->where('operation_type', 'sale')->take(6);
+        @endphp
+        <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
+            <h2 class="font-bold text-slate-900">🚚 Gestión de Envíos</h2>
+            @if($shipOrders->isEmpty())
+                <p class="text-xs text-slate-500">Sin pedidos pendientes de envío.</p>
+            @else
+                <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+                    @foreach($shipOrders as $so)
+                        <div class="p-3 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
+                            <div class="font-bold text-slate-900">Ref. #{{ $so->odoo_record_id ?? $so->id }} · {{ $so->customer_name }}</div>
+                            <div class="text-slate-600">${{ number_format($so->total_amount, 2) }} · {{ $statusLabels[$so->status] ?? $so->status }}</div>
+                            <div class="flex gap-1.5">
+                                <button type="button" onclick="updateOpStatus({{ $so->id }}, 'shipped')" class="px-2.5 py-1 rounded-lg bg-sky-600 text-white font-bold cursor-pointer">Enviada</button>
+                                <button type="button" onclick="updateOpStatus({{ $so->id }}, 'completed')" class="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-bold cursor-pointer">Entregada</button>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+        </section>
+    @endif
 
     {{-- Calendario Semanal/Diario/Mensual para Estéticas --}}
     @if($business->branch === 'estetica' && $business->isFeatureEnabled('agenda'))
@@ -378,15 +505,22 @@
                 </button>
             </section>
 
+            @if($business->isFeatureEnabled('anuncios_ia'))
             <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
-                <h2 class="font-bold text-slate-900">📣 Redes Sociales</h2>
+                <h2 class="font-bold text-slate-900">📣 Anuncios IA y Redes</h2>
                 <p class="text-xs text-slate-600">Campaña vinculada: <strong>Ref. #{{ $business->sc_project_id }}</strong></p>
+                <button type="button" onclick="quickPrompt('Créame un anuncio atractivo para publicar hoy en mis redes sociales')"
+                    class="w-full py-2 rounded-xl bg-slate-900 text-white text-xs font-bold cursor-pointer">
+                    ✨ Generar y Programar Anuncio IA
+                </button>
                 <a href="{{ $scConnectUrl }}" target="_blank"
                    class="block text-center py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold">
                     Conectar Facebook / Instagram / TikTok →
                 </a>
             </section>
+            @endif
 
+            @if($business->isFeatureEnabled('google_maps'))
             <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
                 <h2 class="font-bold text-slate-900">📍 Kit Google Maps & Reseñas 5★</h2>
                 <p class="text-xs text-slate-600">{{ $gmapsKit['seo_title'] ?? $business->name }}</p>
@@ -400,6 +534,7 @@
                     </div>
                 @endif
             </section>
+            @endif
         </div>
     </div>
 </div>
@@ -510,6 +645,36 @@ async function submitPromotion(e) {
         })
     });
     window.location.reload();
+}
+
+async function submitCatalogItem(e, category) {
+    e.preventDefault();
+    const isQr = category === 'Platillo';
+    const name = document.getElementById(isQr ? 'cat-name-qr' : 'cat-name-web').value;
+    const price = parseFloat(document.getElementById(isQr ? 'cat-price-qr' : 'cat-price-web').value) || 100;
+    await fetch("{{ route('business.admin.catalog', ['slug' => $business->slug]) }}", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+        body: JSON.stringify({ name, price, category })
+    });
+    window.location.reload();
+}
+
+async function updateOpStatus(opId, status) {
+    await fetch(`{{ url("/{$business->slug}/admin/operations") }}/${opId}/status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+        body: JSON.stringify({ status })
+    });
+    window.location.reload();
+}
+
+function selectTable(tableName) {
+    const input = document.getElementById('pos-table');
+    if (input) {
+        input.value = tableName;
+        input.focus();
+    }
 }
 
 async function toggleAdvancedMode(enabled) {

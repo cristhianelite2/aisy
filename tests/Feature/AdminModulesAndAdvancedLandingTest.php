@@ -91,5 +91,22 @@ class AdminModulesAndAdvancedLandingTest extends TestCase
             ->assertSee('#14b8a6')
             ->assertSee('Lun-Sáb 9am - 8pm')
             ->assertDontSee('Conoce nuestro estilo');
+
+        // 4. Comandas & Tienda branches expose all their toggleable module panels
+        $comandas = Business::factory()->create(['user_id' => $owner->id, 'name' => 'Taquería Test', 'branch' => 'comandas']);
+        $this->actingAs($owner)
+            ->get("/{$comandas->slug}/admin")
+            ->assertOk()
+            ->assertSee('Menú Digital QR')
+            ->assertSee('Pantalla de Cocina (KDS)')
+            ->assertSee('Control de Mesas');
+
+        $tienda = Business::factory()->create(['user_id' => $owner->id, 'name' => 'Tienda Test', 'branch' => 'tienda']);
+        $this->actingAs($owner)
+            ->get("/{$tienda->slug}/admin")
+            ->assertOk()
+            ->assertSee('Catálogo e Inventario')
+            ->assertSee('Estadísticas e Insights IA')
+            ->assertSee('Gestión de Envíos');
     }
 }

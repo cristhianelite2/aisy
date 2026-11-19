@@ -2,7 +2,7 @@
 
 ## [0.3.0] - 2026-11-18
 ### Added
-- **Módulos Interactivos en Panel Admin (`/{slug}/admin`)**: Los módulos habilitados (`Agenda de Citas`, `Cobro Rápido / POS`, `Promociones y Lealtad`) ahora muestran sus formularios operativos directos dentro del panel (`POST /{slug}/admin/appointments`, `pos-sale`, `promotions`) sincronizados en tiempo real.
+- **Módulos Interactivos Completos en Panel Admin (`/{slug}/admin`)**: Todos los módulos prendibles/apagables de los 3 giros ahora cuentan con interfaz operativa directa y se ocultan dinámicamente al apagarse (`Agenda de Citas`, `Cobro Rápido / POS`, `Promociones y Lealtad`, `Menú Digital QR`, `Pantalla de Cocina (KDS)`, `Control de Mesas`, `Catálogo e Inventario`, `Estadísticas e Insights IA`, `Gestión de Envíos`, `Anuncios IA y Redes`, `Kit Google Maps y Reseñas`).
 - **Modo Avanzado de Personalización de Sitio (`advanced_mode` + `landing_config`)**: Desactivado por defecto; al habilitarlo en `/{slug}/admin` permite editar colores, estilo, badge, título, subtítulo, horario, imagen hero y prender/apagar secciones de la landing (`Pilares`, `Galería`, `Reseñas`, `Mapa`, `Promociones`).
 
 ## [0.2.2] - 2026-11-18
