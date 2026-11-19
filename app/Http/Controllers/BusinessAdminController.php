@@ -10,6 +10,7 @@ use App\Services\Integrations\GoogleMapsKitService;
 use App\Services\Integrations\SellerCentralClient;
 use App\Services\Integrations\WhatsAppGatewayClient;
 use App\Services\Odoo\OdooBusinessService;
+use App\Services\Odoo\OdooClient;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -120,11 +121,53 @@ class BusinessAdminController extends Controller
         $this->authorizeBusiness($request, $business);
         $item = $odoo->syncCatalogItem($business, [
             'name' => (string) $request->input('name', 'Nuevo Ítem'),
+            'type' => (string) $request->input('type', $business->branch === 'tienda' ? 'product' : ($business->branch === 'comandas' ? 'consu' : 'service')),
             'price' => (float) $request->input('price', 100),
+            'duration_minutes' => $request->filled('duration_minutes') ? (int) $request->input('duration_minutes') : null,
+            'stock_qty' => $request->filled('stock_qty') ? (int) $request->input('stock_qty') : 10,
             'category' => (string) $request->input('category', 'General'),
+            'description' => $request->input('description'),
         ]);
 
         return response()->json(['ok' => true, 'item' => $item]);
+    }
+
+    public function updateCatalogItem(Request $request, string $slug, int $id, OdooClient $odoo): JsonResponse
+    {
+        $business = Business::where('slug', $slug)->firstOrFail();
+        $this->authorizeBusiness($request, $business);
+        $item = $business->catalogItems()->findOrFail($id);
+
+        $item->fill($request->only(['name', 'type', 'price', 'duration_minutes', 'stock_qty', 'category', 'description']));
+        if ($request->has('active')) {
+            $item->active = (bool) $request->boolean('active');
+        }
+        $item->save();
+
+        if ($item->odoo_product_id) {
+            try {
+                if ($odoo->isAvailable()) {
+                    $odoo->write('product.template', [(int) $item->odoo_product_id], [
+                        'name' => $item->name,
+                        'list_price' => (float) $item->price,
+                    ]);
+                }
+            } catch (\Throwable) {
+                // Non-fatal
+            }
+        }
+
+        return response()->json(['ok' => true, 'item' => $item]);
+    }
+
+    public function deleteCatalogItem(Request $request, string $slug, int $id): JsonResponse
+    {
+        $business = Business::where('slug', $slug)->firstOrFail();
+        $this->authorizeBusiness($request, $business);
+        $item = $business->catalogItems()->findOrFail($id);
+        $item->delete();
+
+        return response()->json(['ok' => true]);
     }
 
     public function updateOperationStatus(Request $request, string $slug, int $id): JsonResponse

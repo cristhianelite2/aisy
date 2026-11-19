@@ -108,5 +108,44 @@ class AdminModulesAndAdvancedLandingTest extends TestCase
             ->assertSee('Catálogo e Inventario')
             ->assertSee('Estadísticas e Insights IA')
             ->assertSee('Gestión de Envíos');
+
+        // 5. Full CRUD for Services & Products in Admin (available for Estética too)
+        $this->actingAs($owner)
+            ->get("/{$business->slug}/admin")
+            ->assertOk()
+            ->assertSee('Administrar Servicios y Productos');
+
+        $createItem = $this->actingAs($owner)
+            ->postJson("/{$business->slug}/admin/catalog", [
+                'name' => 'Alaciado Brasileño',
+                'type' => 'service',
+                'price' => 890,
+                'duration_minutes' => 90,
+                'category' => 'Tratamientos',
+            ])
+            ->assertOk();
+
+        $itemId = $createItem->json('item.id');
+
+        $this->actingAs($owner)
+            ->patchJson("/{$business->slug}/admin/catalog/{$itemId}", [
+                'name' => 'Alaciado Orgánico',
+                'price' => 950,
+                'active' => false,
+            ])
+            ->assertOk();
+
+        $this->assertDatabaseHas('business_catalog_items', [
+            'id' => $itemId,
+            'name' => 'Alaciado Orgánico',
+            'price' => 950,
+            'active' => false,
+        ]);
+
+        $this->actingAs($owner)
+            ->deleteJson("/{$business->slug}/admin/catalog/{$itemId}")
+            ->assertOk();
+
+        $this->assertDatabaseMissing('business_catalog_items', ['id' => $itemId]);
     }
 }

@@ -30,6 +30,8 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/{slug}/admin/whatsapp/qr', [BusinessAdminController::class, 'whatsappQr'])->name('business.admin.wa_qr');
     Route::post('/{slug}/admin/dead-times', [BusinessAdminController::class, 'triggerDeadTimes'])->name('business.admin.dead_times');
     Route::post('/{slug}/admin/catalog', [BusinessAdminController::class, 'addCatalogItem'])->name('business.admin.catalog');
+    Route::patch('/{slug}/admin/catalog/{id}', [BusinessAdminController::class, 'updateCatalogItem'])->name('business.admin.catalog.update');
+    Route::delete('/{slug}/admin/catalog/{id}', [BusinessAdminController::class, 'deleteCatalogItem'])->name('business.admin.catalog.delete');
     Route::post('/{slug}/admin/operations/{id}/status', [BusinessAdminController::class, 'updateOperationStatus'])->name('business.admin.op_status');
     Route::post('/{slug}/admin/appointments', [BusinessAdminController::class, 'createAppointment'])->name('business.admin.appointments');
     Route::post('/{slug}/admin/pos-sale', [BusinessAdminController::class, 'createPosSale'])->name('business.admin.pos_sale');

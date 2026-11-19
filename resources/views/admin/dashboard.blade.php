@@ -2,8 +2,9 @@
 
 @section('title', "Panel · {$business->name} — Aisy")
 
-@if($business->branch === 'estetica')
 @push('head')
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+@if($business->branch === 'estetica')
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.15/locales/es.global.min.js"></script>
 <style>
@@ -25,8 +26,8 @@
         text-transform: capitalize;
     }
 </style>
-@endpush
 @endif
+@endpush
 
 @php
     $branchLabel = match($business->branch) {
@@ -185,13 +186,24 @@
 
         @if($business->isFeatureEnabled('menu_qr'))
             <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
-                <h2 class="font-bold text-slate-900">📱 Menú Digital QR</h2>
-                <p class="text-xs text-slate-500">Comparte tu menú interactivo en mesas: <a href="{{ route('business.landing', ['slug' => $business->slug]) }}#catalogo" target="_blank" class="text-sky-600 font-semibold underline">Abrir Menú</a></p>
-                <form onsubmit="submitCatalogItem(event, 'Platillo')" class="space-y-2.5 text-xs">
-                    <input type="text" id="cat-name-qr" required placeholder="Nuevo platillo o bebida" class="w-full rounded-xl border border-slate-300 px-3 py-2">
-                    <input type="number" id="cat-price-qr" value="120" step="0.01" placeholder="Precio ($)" class="w-full rounded-xl border border-slate-300 px-3 py-2">
-                    <button type="submit" class="w-full py-2 rounded-xl bg-slate-900 text-white font-bold cursor-pointer">Agregar al Menú QR</button>
-                </form>
+                <div class="flex items-center justify-between gap-2">
+                    <h2 class="font-bold text-slate-900">📱 Menú Digital QR</h2>
+                    <a href="{{ route('business.landing', ['slug' => $business->slug]) }}#catalogo" target="_blank" class="text-[11px] font-bold text-sky-600 hover:underline">Abrir Menú →</a>
+                </div>
+                <div class="flex items-center gap-4 p-3 rounded-xl bg-slate-50 border border-slate-200">
+                    <div id="menu-qr-canvas" class="bg-white p-2 rounded-lg border border-slate-200 shrink-0"></div>
+                    <div class="space-y-2 text-xs">
+                        <div class="font-bold text-slate-800">Escanea para ver el menú</div>
+                        <div class="text-[11px] text-slate-500 break-all">{{ url("/{$business->slug}#catalogo") }}</div>
+                        <div class="flex flex-wrap gap-1.5">
+                            <button type="button" onclick="downloadMenuQr()" class="px-2.5 py-1 rounded-lg bg-slate-900 text-white font-bold cursor-pointer">📥 Descargar</button>
+                            <button type="button" onclick="window.print()" class="px-2.5 py-1 rounded-lg bg-slate-200 text-slate-800 font-bold cursor-pointer">🖨️ Imprimir</button>
+                        </div>
+                    </div>
+                </div>
+                <a href="#catalogo-admin" class="block text-center py-2 rounded-xl text-xs font-bold text-white" style="background: {{ $business->primary_color }}">
+                    Administrar Platillos y Precios ↓
+                </a>
             </section>
         @endif
 
@@ -328,6 +340,86 @@
             <div id="agenda-calendar" class="min-h-[460px]"></div>
         </section>
     @endif
+
+    {{-- Administrar Servicios y Productos (CRUD Completo para cualquier giro) --}}
+    <section id="catalogo-admin" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h2 class="font-extrabold text-slate-900 text-base">📦 Administrar Servicios y Productos</h2>
+                <p class="text-xs text-slate-500">Agrega, edita precios, pausa o elimina los ítems visibles en tu sitio web, agenda y punto de venta.</p>
+            </div>
+            <span class="text-xs px-3 py-1 rounded-full bg-slate-100 font-bold text-slate-700">{{ $catalog->count() }} registrados</span>
+        </div>
+
+        <form onsubmit="createCatalogItemFull(event)" class="grid sm:grid-cols-6 gap-2.5 p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+            <input type="text" id="new-cat-name" required placeholder="Nombre del servicio o producto *" class="sm:col-span-2 rounded-xl border border-slate-300 px-3 py-2 bg-white">
+            <select id="new-cat-type" class="rounded-xl border border-slate-300 px-3 py-2 bg-white">
+                <option value="service" {{ $business->branch === 'estetica' ? 'selected' : '' }}>Servicio</option>
+                <option value="product" {{ $business->branch === 'tienda' ? 'selected' : '' }}>Producto</option>
+                <option value="consu" {{ $business->branch === 'comandas' ? 'selected' : '' }}>Platillo / Bebida</option>
+            </select>
+            <input type="number" id="new-cat-price" required step="0.01" placeholder="Precio ($) *" class="rounded-xl border border-slate-300 px-3 py-2 bg-white">
+            <input type="text" id="new-cat-category" placeholder="Categoría (ej. Color)" class="rounded-xl border border-slate-300 px-3 py-2 bg-white">
+            <button type="submit" class="rounded-xl text-white font-bold px-4 py-2 cursor-pointer" style="background: {{ $business->primary_color }}">
+                + Agregar
+            </button>
+        </form>
+
+        @if($catalog->isEmpty())
+            <p class="text-xs text-slate-500">Aún no tienes servicios ni productos en tu catálogo.</p>
+        @else
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead class="border-b border-slate-200 text-slate-500 uppercase">
+                        <tr>
+                            <th class="py-2 pr-3">Nombre</th>
+                            <th class="py-2 pr-3">Tipo</th>
+                            <th class="py-2 pr-3">Categoría</th>
+                            <th class="py-2 pr-3">Precio ($)</th>
+                            <th class="py-2 pr-3">Duración / Stock</th>
+                            <th class="py-2 pr-3">Estado</th>
+                            <th class="py-2 text-right">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @foreach($catalog as $item)
+                            <tr id="cat-row-{{ $item->id }}">
+                                <td class="py-2.5 pr-3">
+                                    <input type="text" id="edit-name-{{ $item->id }}" value="{{ $item->name }}" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 font-semibold text-slate-900">
+                                </td>
+                                <td class="py-2.5 pr-3 capitalize text-slate-600">
+                                    {{ $item->type === 'service' ? 'Servicio' : ($item->type === 'product' ? 'Producto' : 'Platillo') }}
+                                </td>
+                                <td class="py-2.5 pr-3">
+                                    <input type="text" id="edit-cat-{{ $item->id }}" value="{{ $item->category }}" class="w-28 rounded-lg border border-slate-300 px-2 py-1.5">
+                                </td>
+                                <td class="py-2.5 pr-3">
+                                    <input type="number" step="0.01" id="edit-price-{{ $item->id }}" value="{{ $item->price }}" class="w-24 rounded-lg border border-slate-300 px-2 py-1.5 font-bold">
+                                </td>
+                                <td class="py-2.5 pr-3">
+                                    @if($item->type === 'service')
+                                        <input type="number" id="edit-dur-{{ $item->id }}" value="{{ $item->duration_minutes ?? 45 }}" class="w-20 rounded-lg border border-slate-300 px-2 py-1.5"> min
+                                    @else
+                                        <input type="number" id="edit-stock-{{ $item->id }}" value="{{ $item->stock_qty }}" class="w-20 rounded-lg border border-slate-300 px-2 py-1.5"> uds
+                                    @endif
+                                </td>
+                                <td class="py-2.5 pr-3">
+                                    <label class="inline-flex items-center gap-1.5 cursor-pointer">
+                                        <input type="checkbox" id="edit-active-{{ $item->id }}" {{ $item->active ? 'checked' : '' }} class="accent-emerald-600">
+                                        <span>{{ $item->active ? 'Activo' : 'Pausado' }}</span>
+                                    </label>
+                                </td>
+                                <td class="py-2.5 text-right whitespace-nowrap space-x-1">
+                                    <button type="button" onclick="saveCatalogRow({{ $item->id }}, '{{ $item->type }}')" class="px-2.5 py-1 rounded-lg bg-slate-900 text-white font-bold cursor-pointer">Guardar</button>
+                                    <button type="button" onclick="deleteCatalogRow({{ $item->id }})" class="px-2.5 py-1 rounded-lg bg-rose-100 text-rose-700 font-bold cursor-pointer hover:bg-rose-200">Eliminar</button>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @endif
+    </section>
 
     {{-- Modo Avanzado: Personalización Completa de Landing y Módulos --}}
     <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5">
@@ -675,6 +767,71 @@ function selectTable(tableName) {
         input.value = tableName;
         input.focus();
     }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const qrTarget = document.getElementById('menu-qr-canvas');
+    if (qrTarget && window.QRCode) {
+        new QRCode(qrTarget, {
+            text: "{{ url("/{$business->slug}#catalogo") }}",
+            width: 112,
+            height: 112,
+            colorDark: "#0f172a",
+            colorLight: "#ffffff",
+        });
+    }
+});
+
+function downloadMenuQr() {
+    const canvas = document.querySelector('#menu-qr-canvas canvas');
+    if (!canvas) return;
+    const link = document.createElement('a');
+    link.download = "menu-qr-{{ $business->slug }}.png";
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+}
+
+async function createCatalogItemFull(e) {
+    e.preventDefault();
+    await fetch("{{ route('business.admin.catalog', ['slug' => $business->slug]) }}", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+        body: JSON.stringify({
+            name: document.getElementById('new-cat-name').value,
+            type: document.getElementById('new-cat-type').value,
+            price: parseFloat(document.getElementById('new-cat-price').value) || 0,
+            category: document.getElementById('new-cat-category').value || 'General',
+        })
+    });
+    window.location.reload();
+}
+
+async function saveCatalogRow(id, type) {
+    const payload = {
+        name: document.getElementById(`edit-name-${id}`).value,
+        category: document.getElementById(`edit-cat-${id}`).value,
+        price: parseFloat(document.getElementById(`edit-price-${id}`).value) || 0,
+        active: document.getElementById(`edit-active-${id}`).checked,
+    };
+    if (type === 'service') {
+        payload.duration_minutes = parseInt(document.getElementById(`edit-dur-${id}`)?.value || '45', 10);
+    } else {
+        payload.stock_qty = parseInt(document.getElementById(`edit-stock-${id}`)?.value || '10', 10);
+    }
+    await fetch(`{{ url("/{$business->slug}/admin/catalog") }}/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+        body: JSON.stringify(payload)
+    });
+    window.location.reload();
+}
+
+async function deleteCatalogRow(id) {
+    await fetch(`{{ url("/{$business->slug}/admin/catalog") }}/${id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf }
+    });
+    window.location.reload();
 }
 
 async function toggleAdvancedMode(enabled) {

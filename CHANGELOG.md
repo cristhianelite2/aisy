@@ -1,5 +1,10 @@
 # Changelog — Aisy
 
+## [0.3.1] - 2026-11-18
+### Added
+- **CRUD Completo de Servicios y Productos en Admin (`/{slug}/admin`)**: Todos los giros (`estetica`, `tienda`, `comandas`) ahora cuentan con la sección **Administrar Servicios y Productos** (`POST /catalog`, `PATCH /catalog/{id}`, `DELETE /catalog/{id}`) para crear, editar precios/duración/stock/categoría, pausar o eliminar ítems sincronizados.
+- **Menú Digital QR Escaneable y Descargable**: Generación real de código QR (`qrcodejs`) apuntando a `/{slug}#catalogo` con botones de **Descargar PNG** e **Imprimir QR** y enlace directo al administrador de platillos.
+
 ## [0.3.0] - 2026-11-18
 ### Added
 - **Módulos Interactivos Completos en Panel Admin (`/{slug}/admin`)**: Todos los módulos prendibles/apagables de los 3 giros ahora cuentan con interfaz operativa directa y se ocultan dinámicamente al apagarse (`Agenda de Citas`, `Cobro Rápido / POS`, `Promociones y Lealtad`, `Menú Digital QR`, `Pantalla de Cocina (KDS)`, `Control de Mesas`, `Catálogo e Inventario`, `Estadísticas e Insights IA`, `Gestión de Envíos`, `Anuncios IA y Redes`, `Kit Google Maps y Reseñas`).
