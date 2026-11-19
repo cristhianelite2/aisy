@@ -34,11 +34,18 @@ class SecurityAndAuthTest extends TestCase
             ->get("/{$business->slug}/admin")
             ->assertForbidden();
 
-        // 3. Owner gets 200 OK
-        $this->actingAs($owner)
-            ->get("/{$business->slug}/admin")
-            ->assertOk()
-            ->assertSee('Estética Segura');
+        // 3. Owner gets 200 OK, sees Spanish calendar for estetica, and no Odoo branding
+        $ownerResp = $this->actingAs($owner)
+            ->get("/{$business->slug}/admin");
+
+        $ownerResp->assertOk()
+            ->assertSee('Estética Segura')
+            ->assertSee('agenda-calendar')
+            ->assertSee('Semanal')
+            ->assertSee('Diario')
+            ->assertSee('Mensual')
+            ->assertDontSee('Odoo')
+            ->assertDontSee('APPOINTMENT');
     }
 
     public function test_demo_seeder_creates_four_businesses_across_branches_and_phases(): void

@@ -20,7 +20,7 @@
 
         <div id="done-box" class="hidden space-y-6 pt-6 border-t border-slate-200">
             <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-sm font-medium">
-                ✅ ¡Listo! Todas las capas de tu negocio están activas y conectadas a Odoo.
+                ✅ ¡Listo! Todas las capas de tu negocio están activas y sincronizadas.
             </div>
 
             <div class="grid sm:grid-cols-2 gap-4">

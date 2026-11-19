@@ -1,5 +1,10 @@
 # Changelog — Aisy
 
+## [0.2.2] - 2026-11-18
+### Changed
+- **Panel Admin 100% en Español y sin menciones visibles de Odoo**: Reemplazadas etiquetas en inglés (`Cita`, `Venta`, `Comanda`, `Promoción`, estados en español) y ocultas las referencias a Odoo manteniendo los IDs (`Ref. #...`).
+- **Calendario Interactivo de Citas (Estéticas)**: Integrado FullCalendar en español en `/{slug}/admin` con vista semanal predeterminada y selector de vista **Diario / Semanal / Mensual**.
+
 ## [0.2.1] - 2026-11-18
 ### Added
 - **Landing Pages Completas y Modernas por Giro (`/{slug}`)**: Rediseño integral con navbar glassmórfica, hero animado con gradientes dinámicos de marca (`primary_color`, `secondary_color`), SVG grid, pilares de valor, galería visual por rubro, promociones destacadas, catálogo interactivo, reseñas, mapa de ubicación y animaciones scroll-reveal.

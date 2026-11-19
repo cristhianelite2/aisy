@@ -12,13 +12,13 @@
     <header class="flex flex-wrap items-center justify-between gap-4 mb-10">
         <div>
             <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-sky-100 text-sky-800">
-                ⚡ Odoo Headless + IA WhatsApp + Seller Central
+                ⚡ Gestión Inteligente + IA WhatsApp + Redes Sociales
             </span>
             <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 mt-3">
                 Aisy — Lanza tu negocio en 60 segundos
             </h1>
             <p class="text-slate-600 mt-2 max-w-2xl">
-                Llena estos datos básicos. Nosotros creamos tu empresa aislada en Odoo, tu página web personalizada, tu panel de control modular y tu asistente de ventas por WhatsApp.
+                Llena estos datos básicos. Nosotros creamos tu empresa aislada, tu página web personalizada, tu panel de control modular y tu asistente de ventas por WhatsApp.
             </p>
         </div>
         <div class="flex items-center gap-3">
