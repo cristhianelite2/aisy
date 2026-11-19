@@ -1,5 +1,9 @@
 # Changelog — Aisy
 
+## [0.3.2] - 2026-11-18
+### Changed
+- **Rediseño del Panel Admin (`/{slug}/admin`)**: Nueva interfaz limpia con barra lateral de navegación por pestañas (`Resumen e IA`, `Operación del Giro`, `Cobro y Promos`, `Servicios y Productos`, `WhatsApp, Redes y Maps`, `Módulos y Sitio Web`), memoria de pestaña activa y redimensionado automático de FullCalendar.
+
 ## [0.3.1] - 2026-11-18
 ### Added
 - **CRUD Completo de Servicios y Productos en Admin (`/{slug}/admin`)**: Todos los giros (`estetica`, `tienda`, `comandas`) ahora cuentan con la sección **Administrar Servicios y Productos** (`POST /catalog`, `PATCH /catalog/{id}`, `DELETE /catalog/{id}`) para crear, editar precios/duración/stock/categoría, pausar o eliminar ítems sincronizados.

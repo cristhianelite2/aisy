@@ -3,30 +3,30 @@
 @section('title', "Panel · {$business->name} — Aisy")
 
 @push('head')
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 @if($business->branch === 'estetica')
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.15/locales/es.global.min.js"></script>
+@endif
 <style>
+    :root { --bp: {{ $business->primary_color ?: '#0ea5e9' }}; --bs: {{ $business->secondary_color ?: '#6366f1' }}; }
+    body { font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif; }
     .fc .fc-button-primary {
-        background-color: {{ $business->primary_color ?: '#0ea5e9' }};
-        border-color: {{ $business->primary_color ?: '#0ea5e9' }};
+        background-color: var(--bp);
+        border-color: var(--bp);
         font-size: 0.75rem;
         font-weight: 700;
         text-transform: capitalize;
     }
     .fc .fc-button-primary:hover, .fc .fc-button-primary.fc-button-active {
-        opacity: 0.9;
         background-color: #0f172a;
         border-color: #0f172a;
     }
-    .fc .fc-toolbar-title {
-        font-size: 1rem !important;
-        font-weight: 800;
-        text-transform: capitalize;
-    }
+    .fc .fc-toolbar-title { font-size: 1rem !important; font-weight: 800; text-transform: capitalize; }
 </style>
-@endif
 @endpush
 
 @php
@@ -66,473 +66,541 @@
 @endphp
 
 @section('content')
-<div class="max-w-7xl mx-auto px-4 py-8 space-y-8">
-    <header class="flex flex-wrap items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-        <div>
-            <div class="flex flex-wrap items-center gap-2">
-                <span class="w-3.5 h-3.5 rounded-full" style="background: {{ $business->primary_color }}"></span>
-                <h1 class="text-2xl font-extrabold text-slate-900">{{ $business->name }}</h1>
-                <span class="text-xs px-2.5 py-0.5 rounded-full bg-slate-100 font-bold text-slate-700">{{ $branchLabel }}</span>
-                <span class="text-xs px-2.5 py-0.5 rounded-full bg-sky-50 font-semibold text-sky-800">Ref. #{{ $business->odoo_company_id }}</span>
+<div class="min-h-screen bg-slate-50 flex flex-col lg:flex-row">
+    {{-- Sidebar --}}
+    <aside class="w-full lg:w-64 bg-white border-b lg:border-b-0 lg:border-r border-slate-200 p-5 flex flex-col justify-between shrink-0 lg:sticky lg:top-0 lg:h-screen">
+        <div class="space-y-6">
+            <div class="flex items-center gap-3">
+                <span class="w-10 h-10 rounded-xl flex items-center justify-center text-white font-extrabold shadow-sm shrink-0"
+                      style="background: linear-gradient(135deg, var(--bp), var(--bs));">
+                    {{ mb_strtoupper(mb_substr($business->name, 0, 1)) }}
+                </span>
+                <div class="min-w-0">
+                    <h1 class="font-extrabold text-sm text-slate-900 truncate">{{ $business->name }}</h1>
+                    <div class="flex items-center gap-1.5 mt-0.5">
+                        <span class="text-[11px] px-2 py-0.5 rounded-full bg-slate-100 font-semibold text-slate-700">{{ $branchLabel }}</span>
+                        <span class="text-[11px] font-mono text-slate-400">Ref. #{{ $business->odoo_company_id }}</span>
+                    </div>
+                </div>
             </div>
-            <p class="text-xs text-slate-500 mt-1">Propietario: {{ $business->owner_name }} · WhatsApp: {{ $business->owner_phone }}</p>
+
+            <nav class="flex lg:flex-col gap-1.5 overflow-x-auto pb-1 lg:pb-0">
+                <button type="button" onclick="switchTab('resumen')" data-tab-btn="resumen"
+                    class="tab-btn flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap cursor-pointer bg-slate-900 text-white">
+                    <span>📊</span> Resumen e IA
+                </button>
+                <button type="button" onclick="switchTab('operacion')" data-tab-btn="operacion"
+                    class="tab-btn flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap cursor-pointer text-slate-600 hover:bg-slate-100">
+                    <span>{{ $business->branch === 'estetica' ? '📅' : ($business->branch === 'comandas' ? '🍳' : '🚚') }}</span>
+                    {{ $business->branch === 'estetica' ? 'Agenda y Citas' : ($business->branch === 'comandas' ? 'Cocina, Mesas y QR' : 'Envíos y Métricas') }}
+                </button>
+                <button type="button" onclick="switchTab('ventas')" data-tab-btn="ventas"
+                    class="tab-btn flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap cursor-pointer text-slate-600 hover:bg-slate-100">
+                    <span>💳</span> Cobro y Promos
+                </button>
+                <button type="button" onclick="switchTab('catalogo')" data-tab-btn="catalogo"
+                    class="tab-btn flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap cursor-pointer text-slate-600 hover:bg-slate-100">
+                    <span>📦</span> Servicios y Productos
+                </button>
+                <button type="button" onclick="switchTab('canales')" data-tab-btn="canales"
+                    class="tab-btn flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap cursor-pointer text-slate-600 hover:bg-slate-100">
+                    <span>📣</span> WhatsApp, Redes y Maps
+                </button>
+                <button type="button" onclick="switchTab('config')" data-tab-btn="config"
+                    class="tab-btn flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap cursor-pointer text-slate-600 hover:bg-slate-100">
+                    <span>⚙️</span> Módulos y Sitio Web
+                </button>
+            </nav>
         </div>
-        <div class="flex flex-wrap items-center gap-2">
+
+        <div class="hidden lg:flex flex-col gap-2 pt-4 border-t border-slate-200">
             <a href="{{ route('business.landing', ['slug' => $business->slug]) }}" target="_blank"
-               class="px-4 py-2 rounded-xl text-xs font-bold text-white" style="background: {{ $business->primary_color }}">
-                🌐 Ver Sitio Público ({{ $business->slug }})
+               class="text-center py-2.5 px-3 rounded-xl text-xs font-bold text-white shadow-sm" style="background: var(--bp)">
+                🌐 Ver Sitio Público
             </a>
             <button type="button" onclick="triggerDeadTimes()"
-               class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold cursor-pointer">
+               class="py-2 px-3 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-bold cursor-pointer">
                 ⚡ Detectar Tiempos Muertos
             </button>
             <form action="{{ route('logout') }}" method="POST">
                 @csrf
-                <button type="submit" class="px-3.5 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-bold cursor-pointer">Salir</button>
+                <button type="submit" class="w-full py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer">
+                    Cerrar sesión
+                </button>
             </form>
         </div>
-    </header>
+    </aside>
 
-    {{-- Métricas --}}
-    <div class="grid sm:grid-cols-4 gap-4">
-        <div class="bg-white p-4 rounded-2xl border border-slate-200">
-            <div class="text-xs text-slate-500">Ventas de Hoy</div>
-            <div class="text-2xl font-extrabold text-slate-900 mt-1">${{ number_format($metrics['sales_today'], 2) }}</div>
-        </div>
-        <div class="bg-white p-4 rounded-2xl border border-slate-200">
-            <div class="text-xs text-slate-500">Órdenes de Hoy</div>
-            <div class="text-2xl font-extrabold text-slate-900 mt-1">{{ $metrics['orders_today'] }}</div>
-        </div>
-        <div class="bg-white p-4 rounded-2xl border border-slate-200">
-            <div class="text-xs text-slate-500">Ventas últimos 7 días</div>
-            <div class="text-2xl font-extrabold text-slate-900 mt-1">${{ number_format($metrics['sales_week'], 2) }}</div>
-        </div>
-        <div class="bg-white p-4 rounded-2xl border border-slate-200">
-            <div class="text-xs text-slate-500">
-                @if($business->branch === 'estetica') Citas Próximas
-                @elseif($business->branch === 'comandas') Comandas Activas
-                @else Catálogo Activo @endif
-            </div>
-            <div class="text-2xl font-extrabold text-slate-900 mt-1">
-                @if($business->branch === 'estetica') {{ $metrics['upcoming_appointments'] }}
-                @elseif($business->branch === 'comandas') {{ $metrics['active_comandas'] }}
-                @else {{ $metrics['catalog_count'] }} @endif
+    {{-- Main Workspace --}}
+    <main class="flex-1 p-5 sm:p-8 max-w-6xl w-full mx-auto space-y-6">
+        {{-- Mobile quick actions --}}
+        <div class="flex lg:hidden flex-wrap items-center justify-between gap-2">
+            <span class="text-xs text-slate-500">Propietario: <strong>{{ $business->owner_name }}</strong></span>
+            <div class="flex gap-2">
+                <a href="{{ route('business.landing', ['slug' => $business->slug]) }}" target="_blank"
+                   class="px-3 py-1.5 rounded-lg text-xs font-bold text-white" style="background: var(--bp)">🌐 Sitio</a>
+                <form action="{{ route('logout') }}" method="POST">
+                    @csrf
+                    <button type="submit" class="px-3 py-1.5 rounded-lg bg-slate-200 text-slate-800 text-xs font-bold">Salir</button>
+                </form>
             </div>
         </div>
-    </div>
 
-    {{-- Módulos Habilitados Interactivos --}}
-    <div class="grid lg:grid-cols-3 gap-6">
-        @if($business->isFeatureEnabled('agenda') && $business->branch === 'estetica')
-            <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
-                <h2 class="font-bold text-slate-900">📅 Agendar Nueva Cita</h2>
-                <form onsubmit="submitAppointment(event)" class="space-y-3 text-xs">
-                    <input type="text" id="appt-customer" required placeholder="Nombre del cliente" class="w-full rounded-xl border border-slate-300 px-3 py-2">
-                    <input type="text" id="appt-phone" placeholder="WhatsApp del cliente (opcional)" class="w-full rounded-xl border border-slate-300 px-3 py-2">
-                    <select id="appt-service" class="w-full rounded-xl border border-slate-300 px-3 py-2">
-                        @foreach($catalog as $item)
-                            <option value="{{ $item->name }}">{{ $item->name }} (${{ number_format($item->price, 0) }})</option>
-                        @endforeach
-                    </select>
-                    <input type="datetime-local" id="appt-date" value="{{ now()->addDay()->setTime(12, 0)->format('Y-m-d\TH:i') }}" class="w-full rounded-xl border border-slate-300 px-3 py-2">
-                    <button type="submit" class="w-full py-2.5 rounded-xl text-white font-bold cursor-pointer" style="background: {{ $business->primary_color }}">
-                        Guardar Cita en Calendario
-                    </button>
-                </form>
-            </section>
-        @endif
-
-        @if($business->isFeatureEnabled('ventas_pos') || $business->isFeatureEnabled('pos') || $business->isFeatureEnabled('pos_voz'))
-            <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
-                <h2 class="font-bold text-slate-900">💳 Cobro Rápido / POS</h2>
-                <form onsubmit="submitPosSale(event)" class="space-y-3 text-xs">
-                    <input type="text" id="pos-customer" placeholder="Cliente (o Mostrador)" class="w-full rounded-xl border border-slate-300 px-3 py-2">
-                    <select id="pos-item" onchange="syncPosPrice()" class="w-full rounded-xl border border-slate-300 px-3 py-2">
-                        @foreach($catalog as $item)
-                            <option value="{{ $item->id }}" data-price="{{ $item->price }}" data-name="{{ $item->name }}">
-                                {{ $item->name }} — ${{ number_format($item->price, 2) }}
-                            </option>
-                        @endforeach
-                        <option value="0" data-price="150" data-name="Concepto personalizado">Otro concepto personalizado...</option>
-                    </select>
-                    <input type="text" id="pos-custom-name" placeholder="Nombre si es personalizado" class="hidden w-full rounded-xl border border-slate-300 px-3 py-2">
-                    <div class="grid grid-cols-2 gap-2">
-                        <input type="number" id="pos-qty" value="1" min="1" placeholder="Cant." class="w-full rounded-xl border border-slate-300 px-3 py-2">
-                        <input type="number" id="pos-price" value="{{ $catalog->first()?->price ?? 150 }}" step="0.01" placeholder="Precio" class="w-full rounded-xl border border-slate-300 px-3 py-2">
-                    </div>
-                    @if($business->branch === 'comandas')
-                        <input type="text" id="pos-table" placeholder="Mesa / Para llevar" class="w-full rounded-xl border border-slate-300 px-3 py-2">
-                    @endif
-                    <button type="submit" class="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold cursor-pointer">
-                        Registrar Cobro Ahora
-                    </button>
-                </form>
-            </section>
-        @endif
-
-        @if($business->isFeatureEnabled('promociones'))
-            <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
-                <h2 class="font-bold text-slate-900">🏷️ Crear Promoción</h2>
-                <form onsubmit="submitPromotion(event)" class="space-y-3 text-xs">
-                    <input type="text" id="promo-title" required placeholder="Título (ej. 20% en Tinte Martes)" class="w-full rounded-xl border border-slate-300 px-3 py-2">
-                    <input type="number" id="promo-discount" value="20" min="1" max="90" placeholder="% Descuento" class="w-full rounded-xl border border-slate-300 px-3 py-2">
-                    <textarea id="promo-desc" rows="2" placeholder="Condiciones visibles en tu sitio web..." class="w-full rounded-xl border border-slate-300 px-3 py-2"></textarea>
-                    <button type="submit" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold cursor-pointer">
-                        Publicar Promoción en Sitio
-                    </button>
-                </form>
-            </section>
-        @endif
-
-        @if($business->isFeatureEnabled('menu_qr'))
-            <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
-                <div class="flex items-center justify-between gap-2">
-                    <h2 class="font-bold text-slate-900">📱 Menú Digital QR</h2>
-                    <a href="{{ route('business.landing', ['slug' => $business->slug]) }}#catalogo" target="_blank" class="text-[11px] font-bold text-sky-600 hover:underline">Abrir Menú →</a>
+        {{-- TAB 1: RESUMEN E IA --}}
+        <div data-tab-panel="resumen" class="tab-panel space-y-6">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="text-xs font-medium text-slate-500">Ventas de Hoy</div>
+                    <div class="text-2xl font-extrabold text-slate-900 mt-1">${{ number_format($metrics['sales_today'], 2) }}</div>
                 </div>
-                <div class="flex items-center gap-4 p-3 rounded-xl bg-slate-50 border border-slate-200">
-                    <div id="menu-qr-canvas" class="bg-white p-2 rounded-lg border border-slate-200 shrink-0"></div>
-                    <div class="space-y-2 text-xs">
-                        <div class="font-bold text-slate-800">Escanea para ver el menú</div>
-                        <div class="text-[11px] text-slate-500 break-all">{{ url("/{$business->slug}#catalogo") }}</div>
-                        <div class="flex flex-wrap gap-1.5">
-                            <button type="button" onclick="downloadMenuQr()" class="px-2.5 py-1 rounded-lg bg-slate-900 text-white font-bold cursor-pointer">📥 Descargar</button>
-                            <button type="button" onclick="window.print()" class="px-2.5 py-1 rounded-lg bg-slate-200 text-slate-800 font-bold cursor-pointer">🖨️ Imprimir</button>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="text-xs font-medium text-slate-500">Órdenes de Hoy</div>
+                    <div class="text-2xl font-extrabold text-slate-900 mt-1">{{ $metrics['orders_today'] }}</div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="text-xs font-medium text-slate-500">Ventas últimos 7 días</div>
+                    <div class="text-2xl font-extrabold text-slate-900 mt-1">${{ number_format($metrics['sales_week'], 2) }}</div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="text-xs font-medium text-slate-500">
+                        @if($business->branch === 'estetica') Citas Próximas
+                        @elseif($business->branch === 'comandas') Comandas Activas
+                        @else Catálogo Activo @endif
+                    </div>
+                    <div class="text-2xl font-extrabold text-slate-900 mt-1">
+                        @if($business->branch === 'estetica') {{ $metrics['upcoming_appointments'] }}
+                        @elseif($business->branch === 'comandas') {{ $metrics['active_comandas'] }}
+                        @else {{ $metrics['catalog_count'] }} @endif
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-6">
+                <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col justify-between">
+                    <div>
+                        <h2 class="font-bold text-slate-900 mb-3">🤖 Asistente IA (Mismo cerebro que WhatsApp)</h2>
+                        <div id="chat-log" class="h-64 overflow-y-auto space-y-2.5 p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs mb-3">
+                            <div class="p-3 rounded-xl bg-white border border-slate-200">
+                                ¡Hola {{ $business->owner_name }}! Pídeme cobrar una venta, agendar una cita, consultar ventas o crear un anuncio para redes.
+                            </div>
                         </div>
                     </div>
-                </div>
-                <a href="#catalogo-admin" class="block text-center py-2 rounded-xl text-xs font-bold text-white" style="background: {{ $business->primary_color }}">
-                    Administrar Platillos y Precios ↓
-                </a>
-            </section>
-        @endif
-
-        @if($business->isFeatureEnabled('catalogo_web'))
-            <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
-                <h2 class="font-bold text-slate-900">📦 Catálogo e Inventario</h2>
-                <p class="text-xs text-slate-500">Productos activos: <strong>{{ $catalog->count() }}</strong></p>
-                <form onsubmit="submitCatalogItem(event, 'General')" class="space-y-2.5 text-xs">
-                    <input type="text" id="cat-name-web" required placeholder="Nombre del producto" class="w-full rounded-xl border border-slate-300 px-3 py-2">
-                    <input type="number" id="cat-price-web" value="199" step="0.01" placeholder="Precio ($)" class="w-full rounded-xl border border-slate-300 px-3 py-2">
-                    <button type="submit" class="w-full py-2 rounded-xl bg-slate-900 text-white font-bold cursor-pointer">Agregar Producto</button>
-                </form>
-            </section>
-        @endif
-
-        @if($business->isFeatureEnabled('estadisticas'))
-            @php
-                $avgTicket = $metrics['orders_today'] > 0 ? ($metrics['sales_today'] / $metrics['orders_today']) : 0;
-            @endphp
-            <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
-                <h2 class="font-bold text-slate-900">📈 Estadísticas e Insights IA</h2>
-                <div class="grid grid-cols-2 gap-2 text-xs">
-                    <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
-                        <div class="text-slate-500">Ticket Promedio</div>
-                        <div class="text-lg font-extrabold text-slate-900">${{ number_format($avgTicket, 2) }}</div>
+                    <div>
+                        <form onsubmit="sendAssistant(event)" class="flex gap-2">
+                            <input type="text" id="chat-input" placeholder="Ej. Cóbrale a Ana un corte de 280..."
+                                class="flex-1 rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500">
+                            <button type="submit" class="px-5 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold cursor-pointer">Enviar</button>
+                        </form>
+                        <div class="mt-2.5 flex flex-wrap gap-1.5">
+                            <button type="button" onclick="quickPrompt('¿Cuánto vendí hoy?')" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 cursor-pointer">📊 Ventas de hoy</button>
+                            <button type="button" onclick="quickPrompt('Créame un anuncio de 20% de descuento para redes')" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 cursor-pointer">🎨 Crear anuncio IA</button>
+                        </div>
                     </div>
-                    <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
-                        <div class="text-slate-500">Ítems Activos</div>
-                        <div class="text-lg font-extrabold text-slate-900">{{ $metrics['catalog_count'] }}</div>
-                    </div>
-                </div>
-                <button type="button" onclick="quickPrompt('Dame un análisis de mis ventas y qué promocionar hoy')" class="w-full py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold cursor-pointer">
-                    Pedir Análisis a la IA →
-                </button>
-            </section>
-        @endif
-    </div>
+                </section>
 
-    {{-- Comandas: Pantalla de Cocina (KDS) y Control de Mesas --}}
-    @if($business->isFeatureEnabled('comandas_kds') || $business->isFeatureEnabled('mesas'))
-        <div class="grid lg:grid-cols-2 gap-6">
-            @if($business->isFeatureEnabled('comandas_kds'))
-                @php
-                    $kdsOrders = $operations->where('operation_type', 'comanda')->whereIn('status', ['pending', 'preparing', 'ready']);
-                @endphp
-                <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
-                    <h2 class="font-bold text-slate-900">🍳 Pantalla de Cocina (KDS)</h2>
-                    @if($kdsOrders->isEmpty())
-                        <p class="text-xs text-slate-500">No hay comandas activas en cocina.</p>
+                <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+                    <h2 class="font-bold text-slate-900">📋 Movimientos y Ventas Recientes</h2>
+                    @if($operations->isEmpty())
+                        <div class="p-6 rounded-xl bg-slate-50 border border-dashed border-slate-200 text-center text-xs text-slate-500">
+                            Aún no hay movimientos registrados. Usa el Asistente IA o la pestaña de Ventas.
+                        </div>
                     @else
-                        <div class="space-y-2.5">
-                            @foreach($kdsOrders as $kds)
-                                <div class="p-3 rounded-xl border border-slate-200 bg-slate-50 flex flex-wrap items-center justify-between gap-2 text-xs">
+                        <div class="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+                            @foreach($operations as $op)
+                                <div class="p-3 rounded-xl border border-slate-200 text-xs flex items-center justify-between gap-2">
                                     <div>
-                                        <div class="font-bold text-slate-900">Ref. #{{ $kds->odoo_record_id ?? $kds->id }} · {{ $kds->table_label ?: $kds->customer_name }}</div>
-                                        <div class="text-slate-600">${{ number_format($kds->total_amount, 2) }} · {{ $statusLabels[$kds->status] ?? $kds->status }}</div>
+                                        <div class="font-bold text-slate-900">
+                                            Ref. #{{ $op->odoo_record_id ?? $op->id }} · {{ $opLabels[$op->operation_type] ?? $op->operation_type }} {{ $op->table_label ? "({$op->table_label})" : '' }}
+                                        </div>
+                                        <div class="text-slate-600">
+                                            {{ $op->customer_name }} · ${{ number_format($op->total_amount, 2) }}
+                                            @if($op->scheduled_at) · {{ $op->scheduled_at->format('d/m H:i') }} @endif
+                                        </div>
                                     </div>
-                                    <div class="flex gap-1.5">
-                                        @if($kds->status !== 'ready')
-                                            <button type="button" onclick="updateOpStatus({{ $kds->id }}, 'ready')" class="px-2.5 py-1 rounded-lg bg-amber-500 text-white font-bold cursor-pointer">Marcar Lista</button>
-                                        @endif
-                                        <button type="button" onclick="updateOpStatus({{ $kds->id }}, 'completed')" class="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-bold cursor-pointer">Entregada</button>
-                                    </div>
+                                    <span class="px-2.5 py-1 rounded-full bg-slate-100 font-semibold text-slate-700">
+                                        {{ $statusLabels[$op->status] ?? $op->status }}
+                                    </span>
                                 </div>
                             @endforeach
                         </div>
                     @endif
-                </section>
-            @endif
 
-            @if($business->isFeatureEnabled('mesas'))
-                <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
-                    <h2 class="font-bold text-slate-900">🪑 Control de Mesas</h2>
-                    <div class="grid grid-cols-3 gap-3 text-xs">
-                        @for($m = 1; $m <= 6; $m++)
-                            @php
-                                $tableName = "Mesa {$m}";
-                                $activeTable = $operations->where('operation_type', 'comanda')->where('table_label', $tableName)->whereIn('status', ['pending', 'preparing', 'ready'])->first();
-                            @endphp
-                            <button type="button" onclick="selectTable('{{ $tableName }}')"
-                                class="p-3 rounded-xl border text-left cursor-pointer {{ $activeTable ? 'bg-amber-50 border-amber-300' : 'bg-slate-50 border-slate-200 hover:bg-slate-100' }}">
-                                <div class="font-bold text-slate-900">{{ $tableName }}</div>
-                                <div class="text-[11px] {{ $activeTable ? 'text-amber-800 font-semibold' : 'text-slate-500' }}">
-                                    {{ $activeTable ? 'Ocupada ($' . number_format($activeTable->total_amount, 0) . ')' : 'Libre' }}
+                    <div class="pt-3 border-t border-slate-100">
+                        <div class="text-xs font-bold text-slate-700 mb-2">🧠 Memoria IA y Bitácora</div>
+                        <div class="space-y-1.5 max-h-36 overflow-y-auto">
+                            @foreach($activities->take(5) as $act)
+                                <div class="text-[11px] p-2 rounded-lg bg-slate-50 border border-slate-200">
+                                    <span class="font-bold text-slate-800">{{ str_replace('Odoo', 'Sistema', $act->title) }}</span>
+                                    <span class="text-slate-500"> — {{ str_replace('Odoo', 'Sistema', $act->details) }}</span>
                                 </div>
-                            </button>
-                        @endfor
+                            @endforeach
+                        </div>
                     </div>
                 </section>
-            @endif
+            </div>
         </div>
-    @endif
 
-    {{-- Gestión de Envíos (Tienda) --}}
-    @if($business->isFeatureEnabled('envios'))
-        @php
-            $shipOrders = $operations->where('operation_type', 'sale')->take(6);
-        @endphp
-        <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
-            <h2 class="font-bold text-slate-900">🚚 Gestión de Envíos</h2>
-            @if($shipOrders->isEmpty())
-                <p class="text-xs text-slate-500">Sin pedidos pendientes de envío.</p>
-            @else
-                <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
-                    @foreach($shipOrders as $so)
-                        <div class="p-3 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
-                            <div class="font-bold text-slate-900">Ref. #{{ $so->odoo_record_id ?? $so->id }} · {{ $so->customer_name }}</div>
-                            <div class="text-slate-600">${{ number_format($so->total_amount, 2) }} · {{ $statusLabels[$so->status] ?? $so->status }}</div>
-                            <div class="flex gap-1.5">
-                                <button type="button" onclick="updateOpStatus({{ $so->id }}, 'shipped')" class="px-2.5 py-1 rounded-lg bg-sky-600 text-white font-bold cursor-pointer">Enviada</button>
-                                <button type="button" onclick="updateOpStatus({{ $so->id }}, 'completed')" class="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-bold cursor-pointer">Entregada</button>
+        {{-- TAB 2: OPERACIÓN DEL GIRO (Agenda / KDS+Mesas+QR / Envíos+Estadísticas) --}}
+        <div data-tab-panel="operacion" class="tab-panel hidden space-y-6">
+            @if($business->branch === 'estetica')
+                @if($business->isFeatureEnabled('agenda'))
+                    <div class="grid lg:grid-cols-3 gap-6">
+                        <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4 h-fit">
+                            <h2 class="font-bold text-slate-900">📅 Agendar Nueva Cita</h2>
+                            <form onsubmit="submitAppointment(event)" class="space-y-3 text-xs">
+                                <div>
+                                    <label class="block font-semibold text-slate-600 mb-1">Cliente *</label>
+                                    <input type="text" id="appt-customer" required placeholder="Nombre del cliente" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                                </div>
+                                <div>
+                                    <label class="block font-semibold text-slate-600 mb-1">WhatsApp</label>
+                                    <input type="text" id="appt-phone" placeholder="52155..." class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                                </div>
+                                <div>
+                                    <label class="block font-semibold text-slate-600 mb-1">Servicio</label>
+                                    <select id="appt-service" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                                        @foreach($catalog as $item)
+                                            <option value="{{ $item->name }}">{{ $item->name }} (${{ number_format($item->price, 0) }})</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block font-semibold text-slate-600 mb-1">Fecha y Hora</label>
+                                    <input type="datetime-local" id="appt-date" value="{{ now()->addDay()->setTime(12, 0)->format('Y-m-d\TH:i') }}" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                                </div>
+                                <button type="submit" class="w-full py-2.5 rounded-xl text-white font-bold cursor-pointer" style="background: var(--bp)">
+                                    Guardar Cita en Calendario
+                                </button>
+                            </form>
+                        </section>
+
+                        <section class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                                <div>
+                                    <h2 class="font-bold text-slate-900">Calendario de Citas</h2>
+                                    <p class="text-xs text-slate-500">Vista semanal predeterminada.</p>
+                                </div>
+                                <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+                                    <button type="button" onclick="setCalView('timeGridDay', this)" class="cal-view-btn px-3 py-1.5 rounded-lg text-xs font-bold text-slate-700 cursor-pointer">Diario</button>
+                                    <button type="button" onclick="setCalView('timeGridWeek', this)" class="cal-view-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-slate-900 shadow-sm cursor-pointer">Semanal</button>
+                                    <button type="button" onclick="setCalView('dayGridMonth', this)" class="cal-view-btn px-3 py-1.5 rounded-lg text-xs font-bold text-slate-700 cursor-pointer">Mensual</button>
+                                </div>
+                            </div>
+                            <div id="agenda-calendar" class="min-h-[460px]"></div>
+                        </section>
+                    </div>
+                @else
+                    <div class="bg-white p-8 rounded-2xl border border-slate-200 text-center text-sm text-slate-500">El módulo <strong>Agenda de Citas</strong> está apagado. Enciéndelo en la pestaña "Módulos y Sitio Web".</div>
+                @endif
+            @endif
+
+            @if($business->branch === 'comandas')
+                <div class="grid lg:grid-cols-2 gap-6">
+                    @if($business->isFeatureEnabled('comandas_kds'))
+                        @php $kdsOrders = $operations->where('operation_type', 'comanda')->whereIn('status', ['pending', 'preparing', 'ready']); @endphp
+                        <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-3">
+                            <h2 class="font-bold text-slate-900">🍳 Pantalla de Cocina (KDS)</h2>
+                            @if($kdsOrders->isEmpty())
+                                <p class="text-xs text-slate-500">No hay comandas activas en cocina.</p>
+                            @else
+                                <div class="space-y-2.5">
+                                    @foreach($kdsOrders as $kds)
+                                        <div class="p-3.5 rounded-xl border border-slate-200 bg-slate-50 flex flex-wrap items-center justify-between gap-2 text-xs">
+                                            <div>
+                                                <div class="font-bold text-slate-900">Ref. #{{ $kds->odoo_record_id ?? $kds->id }} · {{ $kds->table_label ?: $kds->customer_name }}</div>
+                                                <div class="text-slate-600">${{ number_format($kds->total_amount, 2) }} · {{ $statusLabels[$kds->status] ?? $kds->status }}</div>
+                                            </div>
+                                            <div class="flex gap-1.5">
+                                                @if($kds->status !== 'ready')
+                                                    <button type="button" onclick="updateOpStatus({{ $kds->id }}, 'ready')" class="px-2.5 py-1 rounded-lg bg-amber-500 text-white font-bold cursor-pointer">Marcar Lista</button>
+                                                @endif
+                                                <button type="button" onclick="updateOpStatus({{ $kds->id }}, 'completed')" class="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-bold cursor-pointer">Entregada</button>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </section>
+                    @endif
+
+                    @if($business->isFeatureEnabled('mesas'))
+                        <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-3">
+                            <h2 class="font-bold text-slate-900">🪑 Control de Mesas</h2>
+                            <div class="grid grid-cols-3 gap-3 text-xs">
+                                @for($m = 1; $m <= 6; $m++)
+                                    @php
+                                        $tableName = "Mesa {$m}";
+                                        $activeTable = $operations->where('operation_type', 'comanda')->where('table_label', $tableName)->whereIn('status', ['pending', 'preparing', 'ready'])->first();
+                                    @endphp
+                                    <button type="button" onclick="selectTable('{{ $tableName }}'); switchTab('ventas')"
+                                        class="p-3.5 rounded-xl border text-left cursor-pointer {{ $activeTable ? 'bg-amber-50 border-amber-300' : 'bg-slate-50 border-slate-200 hover:bg-slate-100' }}">
+                                        <div class="font-bold text-slate-900">{{ $tableName }}</div>
+                                        <div class="text-[11px] {{ $activeTable ? 'text-amber-800 font-semibold' : 'text-slate-500' }}">
+                                            {{ $activeTable ? 'Ocupada ($' . number_format($activeTable->total_amount, 0) . ')' : 'Libre' }}
+                                        </div>
+                                    </button>
+                                @endfor
+                            </div>
+                        </section>
+                    @endif
+                </div>
+
+                @if($business->isFeatureEnabled('menu_qr'))
+                    <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+                        <div class="flex items-center justify-between gap-2">
+                            <h2 class="font-bold text-slate-900">📱 Menú Digital QR</h2>
+                            <a href="{{ route('business.landing', ['slug' => $business->slug]) }}#catalogo" target="_blank" class="text-xs font-bold text-sky-600 hover:underline">Abrir Menú Público →</a>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-6 p-4 rounded-xl bg-slate-50 border border-slate-200">
+                            <div id="menu-qr-canvas" class="bg-white p-2.5 rounded-xl border border-slate-200 shrink-0"></div>
+                            <div class="space-y-2.5 text-xs">
+                                <div class="font-bold text-slate-800 text-sm">QR listo para imprimir en tus mesas</div>
+                                <div class="text-slate-500">{{ url("/{$business->slug}#catalogo") }}</div>
+                                <div class="flex flex-wrap gap-2">
+                                    <button type="button" onclick="downloadMenuQr()" class="px-3.5 py-2 rounded-xl bg-slate-900 text-white font-bold cursor-pointer">📥 Descargar PNG</button>
+                                    <button type="button" onclick="window.print()" class="px-3.5 py-2 rounded-xl bg-slate-200 text-slate-800 font-bold cursor-pointer">🖨️ Imprimir</button>
+                                    <button type="button" onclick="switchTab('catalogo')" class="px-3.5 py-2 rounded-xl text-white font-bold cursor-pointer" style="background: var(--bp)">Editar Platillos →</button>
+                                </div>
                             </div>
                         </div>
-                    @endforeach
+                    </section>
+                @endif
+            @endif
+
+            @if($business->branch === 'tienda')
+                <div class="grid lg:grid-cols-2 gap-6">
+                    @if($business->isFeatureEnabled('estadisticas'))
+                        @php $avgTicket = $metrics['orders_today'] > 0 ? ($metrics['sales_today'] / $metrics['orders_today']) : 0; @endphp
+                        <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+                            <h2 class="font-bold text-slate-900">📈 Estadísticas e Insights IA</h2>
+                            <div class="grid grid-cols-2 gap-3 text-xs">
+                                <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                                    <div class="text-slate-500">Ticket Promedio</div>
+                                    <div class="text-xl font-extrabold text-slate-900 mt-1">${{ number_format($avgTicket, 2) }}</div>
+                                </div>
+                                <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                                    <div class="text-slate-500">Ítems Activos</div>
+                                    <div class="text-xl font-extrabold text-slate-900 mt-1">{{ $metrics['catalog_count'] }}</div>
+                                </div>
+                            </div>
+                            <button type="button" onclick="switchTab('resumen'); quickPrompt('Dame un análisis de mis ventas y qué promocionar hoy')" class="w-full py-2.5 rounded-xl bg-indigo-600 text-white text-xs font-bold cursor-pointer">
+                                Pedir Análisis a la IA →
+                            </button>
+                        </section>
+                    @endif
+
+                    @if($business->isFeatureEnabled('envios'))
+                        @php $shipOrders = $operations->where('operation_type', 'sale')->take(8); @endphp
+                        <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+                            <h2 class="font-bold text-slate-900">🚚 Gestión de Envíos</h2>
+                            @if($shipOrders->isEmpty())
+                                <p class="text-xs text-slate-500">Sin pedidos pendientes de envío.</p>
+                            @else
+                                <div class="space-y-2.5 max-h-80 overflow-y-auto">
+                                    @foreach($shipOrders as $so)
+                                        <div class="p-3 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between gap-2 text-xs">
+                                            <div>
+                                                <div class="font-bold text-slate-900">Ref. #{{ $so->odoo_record_id ?? $so->id }} · {{ $so->customer_name }}</div>
+                                                <div class="text-slate-600">${{ number_format($so->total_amount, 2) }} · {{ $statusLabels[$so->status] ?? $so->status }}</div>
+                                            </div>
+                                            <div class="flex gap-1.5">
+                                                <button type="button" onclick="updateOpStatus({{ $so->id }}, 'shipped')" class="px-2.5 py-1 rounded-lg bg-sky-600 text-white font-bold cursor-pointer">Enviada</button>
+                                                <button type="button" onclick="updateOpStatus({{ $so->id }}, 'completed')" class="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-bold cursor-pointer">Entregada</button>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </section>
+                    @endif
                 </div>
             @endif
-        </section>
-    @endif
-
-    {{-- Calendario Semanal/Diario/Mensual para Estéticas --}}
-    @if($business->branch === 'estetica' && $business->isFeatureEnabled('agenda'))
-        <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-                <div>
-                    <h2 class="font-bold text-slate-900">📅 Calendario de Citas</h2>
-                    <p class="text-xs text-slate-500">Vista semanal predeterminada. Cambia entre diario, semanal o mensual.</p>
-                </div>
-                <div class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl">
-                    <button type="button" onclick="setCalView('timeGridDay', this)" class="cal-view-btn px-3 py-1.5 rounded-lg text-xs font-bold text-slate-700 hover:bg-white cursor-pointer">Diario</button>
-                    <button type="button" onclick="setCalView('timeGridWeek', this)" class="cal-view-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-slate-900 shadow-sm cursor-pointer">Semanal</button>
-                    <button type="button" onclick="setCalView('dayGridMonth', this)" class="cal-view-btn px-3 py-1.5 rounded-lg text-xs font-bold text-slate-700 hover:bg-white cursor-pointer">Mensual</button>
-                </div>
-            </div>
-            <div id="agenda-calendar" class="min-h-[460px]"></div>
-        </section>
-    @endif
-
-    {{-- Administrar Servicios y Productos (CRUD Completo para cualquier giro) --}}
-    <section id="catalogo-admin" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-            <div>
-                <h2 class="font-extrabold text-slate-900 text-base">📦 Administrar Servicios y Productos</h2>
-                <p class="text-xs text-slate-500">Agrega, edita precios, pausa o elimina los ítems visibles en tu sitio web, agenda y punto de venta.</p>
-            </div>
-            <span class="text-xs px-3 py-1 rounded-full bg-slate-100 font-bold text-slate-700">{{ $catalog->count() }} registrados</span>
         </div>
 
-        <form onsubmit="createCatalogItemFull(event)" class="grid sm:grid-cols-6 gap-2.5 p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs">
-            <input type="text" id="new-cat-name" required placeholder="Nombre del servicio o producto *" class="sm:col-span-2 rounded-xl border border-slate-300 px-3 py-2 bg-white">
-            <select id="new-cat-type" class="rounded-xl border border-slate-300 px-3 py-2 bg-white">
-                <option value="service" {{ $business->branch === 'estetica' ? 'selected' : '' }}>Servicio</option>
-                <option value="product" {{ $business->branch === 'tienda' ? 'selected' : '' }}>Producto</option>
-                <option value="consu" {{ $business->branch === 'comandas' ? 'selected' : '' }}>Platillo / Bebida</option>
-            </select>
-            <input type="number" id="new-cat-price" required step="0.01" placeholder="Precio ($) *" class="rounded-xl border border-slate-300 px-3 py-2 bg-white">
-            <input type="text" id="new-cat-category" placeholder="Categoría (ej. Color)" class="rounded-xl border border-slate-300 px-3 py-2 bg-white">
-            <button type="submit" class="rounded-xl text-white font-bold px-4 py-2 cursor-pointer" style="background: {{ $business->primary_color }}">
-                + Agregar
-            </button>
-        </form>
+        {{-- TAB 3: COBRO RÁPIDO / POS Y PROMOCIONES --}}
+        <div data-tab-panel="ventas" class="tab-panel hidden">
+            <div class="grid lg:grid-cols-2 gap-6">
+                @if($business->isFeatureEnabled('ventas_pos') || $business->isFeatureEnabled('pos') || $business->isFeatureEnabled('pos_voz'))
+                    <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+                        <h2 class="font-bold text-slate-900">💳 Cobro Rápido / POS</h2>
+                        <form onsubmit="submitPosSale(event)" class="space-y-3 text-xs">
+                            <input type="text" id="pos-customer" placeholder="Cliente (o Mostrador)" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5">
+                            <select id="pos-item" onchange="syncPosPrice()" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5">
+                                @foreach($catalog as $item)
+                                    <option value="{{ $item->id }}" data-price="{{ $item->price }}" data-name="{{ $item->name }}">
+                                        {{ $item->name }} — ${{ number_format($item->price, 2) }}
+                                    </option>
+                                @endforeach
+                                <option value="0" data-price="150" data-name="Concepto personalizado">Otro concepto personalizado...</option>
+                            </select>
+                            <input type="text" id="pos-custom-name" placeholder="Nombre si es personalizado" class="hidden w-full rounded-xl border border-slate-300 px-3.5 py-2.5">
+                            <div class="grid grid-cols-2 gap-3">
+                                <input type="number" id="pos-qty" value="1" min="1" placeholder="Cantidad" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5">
+                                <input type="number" id="pos-price" value="{{ $catalog->first()?->price ?? 150 }}" step="0.01" placeholder="Precio ($)" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5">
+                            </div>
+                            @if($business->branch === 'comandas')
+                                <input type="text" id="pos-table" placeholder="Mesa / Para llevar" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5">
+                            @endif
+                            <button type="submit" class="w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold cursor-pointer">
+                                Registrar Cobro Ahora
+                            </button>
+                        </form>
+                    </section>
+                @endif
 
-        @if($catalog->isEmpty())
-            <p class="text-xs text-slate-500">Aún no tienes servicios ni productos en tu catálogo.</p>
-        @else
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs">
-                    <thead class="border-b border-slate-200 text-slate-500 uppercase">
-                        <tr>
-                            <th class="py-2 pr-3">Nombre</th>
-                            <th class="py-2 pr-3">Tipo</th>
-                            <th class="py-2 pr-3">Categoría</th>
-                            <th class="py-2 pr-3">Precio ($)</th>
-                            <th class="py-2 pr-3">Duración / Stock</th>
-                            <th class="py-2 pr-3">Estado</th>
-                            <th class="py-2 text-right">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100">
-                        @foreach($catalog as $item)
-                            <tr id="cat-row-{{ $item->id }}">
-                                <td class="py-2.5 pr-3">
-                                    <input type="text" id="edit-name-{{ $item->id }}" value="{{ $item->name }}" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 font-semibold text-slate-900">
-                                </td>
-                                <td class="py-2.5 pr-3 capitalize text-slate-600">
-                                    {{ $item->type === 'service' ? 'Servicio' : ($item->type === 'product' ? 'Producto' : 'Platillo') }}
-                                </td>
-                                <td class="py-2.5 pr-3">
-                                    <input type="text" id="edit-cat-{{ $item->id }}" value="{{ $item->category }}" class="w-28 rounded-lg border border-slate-300 px-2 py-1.5">
-                                </td>
-                                <td class="py-2.5 pr-3">
-                                    <input type="number" step="0.01" id="edit-price-{{ $item->id }}" value="{{ $item->price }}" class="w-24 rounded-lg border border-slate-300 px-2 py-1.5 font-bold">
-                                </td>
-                                <td class="py-2.5 pr-3">
-                                    @if($item->type === 'service')
-                                        <input type="number" id="edit-dur-{{ $item->id }}" value="{{ $item->duration_minutes ?? 45 }}" class="w-20 rounded-lg border border-slate-300 px-2 py-1.5"> min
-                                    @else
-                                        <input type="number" id="edit-stock-{{ $item->id }}" value="{{ $item->stock_qty }}" class="w-20 rounded-lg border border-slate-300 px-2 py-1.5"> uds
-                                    @endif
-                                </td>
-                                <td class="py-2.5 pr-3">
-                                    <label class="inline-flex items-center gap-1.5 cursor-pointer">
-                                        <input type="checkbox" id="edit-active-{{ $item->id }}" {{ $item->active ? 'checked' : '' }} class="accent-emerald-600">
-                                        <span>{{ $item->active ? 'Activo' : 'Pausado' }}</span>
-                                    </label>
-                                </td>
-                                <td class="py-2.5 text-right whitespace-nowrap space-x-1">
-                                    <button type="button" onclick="saveCatalogRow({{ $item->id }}, '{{ $item->type }}')" class="px-2.5 py-1 rounded-lg bg-slate-900 text-white font-bold cursor-pointer">Guardar</button>
-                                    <button type="button" onclick="deleteCatalogRow({{ $item->id }})" class="px-2.5 py-1 rounded-lg bg-rose-100 text-rose-700 font-bold cursor-pointer hover:bg-rose-200">Eliminar</button>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+                @if($business->isFeatureEnabled('promociones'))
+                    <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+                        <h2 class="font-bold text-slate-900">🏷️ Crear Promoción</h2>
+                        <form onsubmit="submitPromotion(event)" class="space-y-3 text-xs">
+                            <input type="text" id="promo-title" required placeholder="Título (ej. 20% en Tinte Martes)" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5">
+                            <input type="number" id="promo-discount" value="20" min="1" max="90" placeholder="% Descuento" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5">
+                            <textarea id="promo-desc" rows="3" placeholder="Condiciones visibles en tu sitio web..." class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5"></textarea>
+                            <button type="submit" class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold cursor-pointer">
+                                Publicar Promoción en Sitio
+                            </button>
+                        </form>
+                    </section>
+                @endif
             </div>
-        @endif
-    </section>
-
-    {{-- Modo Avanzado: Personalización Completa de Landing y Módulos --}}
-    <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5">
-        <div class="flex flex-wrap items-center justify-between gap-4">
-            <div>
-                <h2 class="font-extrabold text-slate-900 text-base">🎨 Personalización de Sitio Web y Modo Avanzado</h2>
-                <p class="text-xs text-slate-500">Activa el modo avanzado para editar textos, imágenes, colores y secciones de tu sitio público.</p>
-            </div>
-            <label class="inline-flex items-center gap-2.5 px-4 py-2 rounded-xl bg-slate-100 border border-slate-200 cursor-pointer">
-                <input type="checkbox" id="toggle-advanced-mode" {{ $business->advanced_mode ? 'checked' : '' }} onchange="toggleAdvancedMode(this.checked)" class="w-4 h-4 accent-sky-600">
-                <span class="text-xs font-bold text-slate-800">Modo Avanzado</span>
-            </label>
         </div>
 
-        <form id="advanced-landing-form" onsubmit="saveLandingConfig(event)" class="{{ $business->advanced_mode ? '' : 'hidden' }} space-y-5 pt-4 border-t border-slate-200">
-            <div class="grid sm:grid-cols-3 gap-4 text-xs">
-                <div>
-                    <label class="block font-semibold text-slate-700 mb-1">Color Principal</label>
-                    <input type="color" id="adv-primary" value="{{ $business->primary_color }}" class="w-full h-10 rounded-lg border border-slate-300 p-1 cursor-pointer">
-                </div>
-                <div>
-                    <label class="block font-semibold text-slate-700 mb-1">Color Secundario</label>
-                    <input type="color" id="adv-secondary" value="{{ $business->secondary_color }}" class="w-full h-10 rounded-lg border border-slate-300 p-1 cursor-pointer">
-                </div>
-                <div>
-                    <label class="block font-semibold text-slate-700 mb-1">Estilo Visual</label>
-                    <select id="adv-style" class="w-full h-10 rounded-lg border border-slate-300 px-3">
-                        <option value="moderno" {{ $business->style_preset === 'moderno' ? 'selected' : '' }}>Moderno</option>
-                        <option value="elegante" {{ $business->style_preset === 'elegante' ? 'selected' : '' }}>Elegante</option>
-                        <option value="vibrante" {{ $business->style_preset === 'vibrante' ? 'selected' : '' }}>Vibrante</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="grid sm:grid-cols-2 gap-4 text-xs">
-                <div>
-                    <label class="block font-semibold text-slate-700 mb-1">Título Principal (Hero)</label>
-                    <input type="text" id="adv-headline" value="{{ $business->landingSetting('hero_headline', '') }}" placeholder="Ej. Realza tu mejor versión" class="w-full rounded-xl border border-slate-300 px-3 py-2">
-                </div>
-                <div>
-                    <label class="block font-semibold text-slate-700 mb-1">Subtítulo</label>
-                    <input type="text" id="adv-subheadline" value="{{ $business->landingSetting('hero_subheadline', '') }}" placeholder="Descripción atractiva de tu negocio" class="w-full rounded-xl border border-slate-300 px-3 py-2">
-                </div>
-                <div>
-                    <label class="block font-semibold text-slate-700 mb-1">Etiqueta Superior (Badge)</label>
-                    <input type="text" id="adv-badge" value="{{ $business->landingSetting('hero_badge', '') }}" placeholder="✨ Belleza & Bienestar" class="w-full rounded-xl border border-slate-300 px-3 py-2">
-                </div>
-                <div>
-                    <label class="block font-semibold text-slate-700 mb-1">Horario Visible</label>
-                    <input type="text" id="adv-hours" value="{{ $business->landingSetting('business_hours', '') }}" placeholder="Lun-Sáb 9am - 8pm" class="w-full rounded-xl border border-slate-300 px-3 py-2">
-                </div>
-                <div class="sm:col-span-2">
-                    <label class="block font-semibold text-slate-700 mb-1">URL de Imagen Principal (opcional)</label>
-                    <input type="url" id="adv-hero-img" value="{{ $business->landingSetting('hero_image_url', '') }}" placeholder="https://..." class="w-full rounded-xl border border-slate-300 px-3 py-2">
-                </div>
-            </div>
-
-            <div>
-                <div class="text-xs font-bold text-slate-700 mb-2">Secciones visibles en el sitio público</div>
-                <div class="grid sm:grid-cols-5 gap-3 text-xs">
-                    <label class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer">
-                        <input type="checkbox" id="adv-show-pillars" {{ $business->landingSetting('show_pillars', true) ? 'checked' : '' }}> Pilares
-                    </label>
-                    <label class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer">
-                        <input type="checkbox" id="adv-show-gallery" {{ $business->landingSetting('show_gallery', true) ? 'checked' : '' }}> Galería
-                    </label>
-                    <label class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer">
-                        <input type="checkbox" id="adv-show-reviews" {{ $business->landingSetting('show_reviews', true) ? 'checked' : '' }}> Reseñas
-                    </label>
-                    <label class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer">
-                        <input type="checkbox" id="adv-show-map" {{ $business->landingSetting('show_map', true) ? 'checked' : '' }}> Mapa
-                    </label>
-                    <label class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer">
-                        <input type="checkbox" id="adv-show-promos" {{ $business->landingSetting('show_promotions', true) ? 'checked' : '' }}> Promos
-                    </label>
-                </div>
-            </div>
-
-            <div class="flex items-center justify-between gap-4">
-                <span id="adv-save-status" class="text-xs text-emerald-700 font-semibold"></span>
-                <button type="submit" class="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold cursor-pointer">
-                    Guardar Cambios del Sitio →
-                </button>
-            </div>
-        </form>
-    </section>
-
-    <div class="grid lg:grid-cols-3 gap-8">
-        {{-- Izquierda: Consola del Asistente + Módulos --}}
-        <div class="space-y-6">
-            <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-                <h2 class="font-bold text-slate-900 mb-3">🤖 Asistente IA (Mismo cerebro que WhatsApp)</h2>
-                <div id="chat-log" class="h-56 overflow-y-auto space-y-2.5 p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs mb-3">
-                    <div class="p-2.5 rounded-lg bg-white border border-slate-200">
-                        ¡Hola {{ $business->owner_name }}! Pídeme cobrar una venta, agendar una cita, consultar ventas o crear un anuncio para redes.
+        {{-- TAB 4: ADMINISTRAR SERVICIOS Y PRODUCTOS (CRUD) --}}
+        <div data-tab-panel="catalogo" class="tab-panel hidden">
+            <section id="catalogo-admin" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <h2 class="font-extrabold text-slate-900 text-base">📦 Administrar Servicios y Productos</h2>
+                        <p class="text-xs text-slate-500">
+                            @if($business->isFeatureEnabled('catalogo_web')) Catálogo e Inventario activo. @endif
+                            Agrega, edita precios, pausa o elimina los ítems visibles en tu sitio web, agenda y punto de venta.
+                        </p>
                     </div>
+                    <span class="text-xs px-3 py-1 rounded-full bg-slate-100 font-bold text-slate-700">{{ $catalog->count() }} registrados</span>
                 </div>
-                <form onsubmit="sendAssistant(event)" class="flex gap-2">
-                    <input type="text" id="chat-input" placeholder="Ej. Cóbrale a Ana un corte de 280..."
-                        class="flex-1 rounded-xl border border-slate-300 px-3 py-2 text-xs">
-                    <button type="submit" class="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold cursor-pointer">Enviar</button>
-                </form>
-                <div class="mt-2 flex flex-wrap gap-1.5">
-                    <button type="button" onclick="quickPrompt('¿Cuánto vendí hoy?')" class="text-[11px] px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 cursor-pointer">📊 Ventas de hoy</button>
-                    <button type="button" onclick="quickPrompt('Créame un anuncio de 20% de descuento para redes')" class="text-[11px] px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 cursor-pointer">🎨 Crear anuncio IA</button>
-                </div>
-            </section>
 
-            <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-                <h2 class="font-bold text-slate-900 mb-3">🎛️ Módulos Prendibles / Apagables</h2>
-                <div class="space-y-2.5">
+                <form onsubmit="createCatalogItemFull(event)" class="grid sm:grid-cols-6 gap-2.5 p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                    <input type="text" id="new-cat-name" required placeholder="Nombre del servicio o producto *" class="sm:col-span-2 rounded-xl border border-slate-300 px-3 py-2 bg-white">
+                    <select id="new-cat-type" class="rounded-xl border border-slate-300 px-3 py-2 bg-white">
+                        <option value="service" {{ $business->branch === 'estetica' ? 'selected' : '' }}>Servicio</option>
+                        <option value="product" {{ $business->branch === 'tienda' ? 'selected' : '' }}>Producto</option>
+                        <option value="consu" {{ $business->branch === 'comandas' ? 'selected' : '' }}>Platillo / Bebida</option>
+                    </select>
+                    <input type="number" id="new-cat-price" required step="0.01" placeholder="Precio ($) *" class="rounded-xl border border-slate-300 px-3 py-2 bg-white">
+                    <input type="text" id="new-cat-category" placeholder="Categoría (ej. Color)" class="rounded-xl border border-slate-300 px-3 py-2 bg-white">
+                    <button type="submit" class="rounded-xl text-white font-bold px-4 py-2 cursor-pointer" style="background: var(--bp)">
+                        + Agregar
+                    </button>
+                </form>
+
+                @if($catalog->isEmpty())
+                    <p class="text-xs text-slate-500">Aún no tienes servicios ni productos en tu catálogo.</p>
+                @else
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="border-b border-slate-200 text-slate-500 uppercase">
+                                <tr>
+                                    <th class="py-2 pr-3">Nombre</th>
+                                    <th class="py-2 pr-3">Tipo</th>
+                                    <th class="py-2 pr-3">Categoría</th>
+                                    <th class="py-2 pr-3">Precio ($)</th>
+                                    <th class="py-2 pr-3">Duración / Stock</th>
+                                    <th class="py-2 pr-3">Estado</th>
+                                    <th class="py-2 text-right">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                @foreach($catalog as $item)
+                                    <tr id="cat-row-{{ $item->id }}">
+                                        <td class="py-2.5 pr-3">
+                                            <input type="text" id="edit-name-{{ $item->id }}" value="{{ $item->name }}" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 font-semibold text-slate-900">
+                                        </td>
+                                        <td class="py-2.5 pr-3 capitalize text-slate-600">
+                                            {{ $item->type === 'service' ? 'Servicio' : ($item->type === 'product' ? 'Producto' : 'Platillo') }}
+                                        </td>
+                                        <td class="py-2.5 pr-3">
+                                            <input type="text" id="edit-cat-{{ $item->id }}" value="{{ $item->category }}" class="w-28 rounded-lg border border-slate-300 px-2 py-1.5">
+                                        </td>
+                                        <td class="py-2.5 pr-3">
+                                            <input type="number" step="0.01" id="edit-price-{{ $item->id }}" value="{{ $item->price }}" class="w-24 rounded-lg border border-slate-300 px-2 py-1.5 font-bold">
+                                        </td>
+                                        <td class="py-2.5 pr-3">
+                                            @if($item->type === 'service')
+                                                <input type="number" id="edit-dur-{{ $item->id }}" value="{{ $item->duration_minutes ?? 45 }}" class="w-20 rounded-lg border border-slate-300 px-2 py-1.5"> min
+                                            @else
+                                                <input type="number" id="edit-stock-{{ $item->id }}" value="{{ $item->stock_qty }}" class="w-20 rounded-lg border border-slate-300 px-2 py-1.5"> uds
+                                            @endif
+                                        </td>
+                                        <td class="py-2.5 pr-3">
+                                            <label class="inline-flex items-center gap-1.5 cursor-pointer">
+                                                <input type="checkbox" id="edit-active-{{ $item->id }}" {{ $item->active ? 'checked' : '' }} class="accent-emerald-600">
+                                                <span>{{ $item->active ? 'Activo' : 'Pausado' }}</span>
+                                            </label>
+                                        </td>
+                                        <td class="py-2.5 text-right whitespace-nowrap space-x-1">
+                                            <button type="button" onclick="saveCatalogRow({{ $item->id }}, '{{ $item->type }}')" class="px-2.5 py-1 rounded-lg bg-slate-900 text-white font-bold cursor-pointer">Guardar</button>
+                                            <button type="button" onclick="deleteCatalogRow({{ $item->id }})" class="px-2.5 py-1 rounded-lg bg-rose-100 text-rose-700 font-bold cursor-pointer hover:bg-rose-200">Eliminar</button>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
+            </section>
+        </div>
+
+        {{-- TAB 5: WHATSAPP, REDES Y GOOGLE MAPS --}}
+        <div data-tab-panel="canales" class="tab-panel hidden">
+            <div class="grid md:grid-cols-3 gap-6">
+                <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-3">
+                    <h2 class="font-bold text-slate-900">📱 WhatsApp del Negocio</h2>
+                    <p class="text-xs text-slate-500">Estado actual: <strong>{{ ($waStatus['state'] ?? '') === 'open' ? 'Conectado' : 'Desconectado' }}</strong></p>
+                    <div id="admin-wa-qr" class="flex justify-center min-h-[140px] items-center bg-slate-50 rounded-xl border border-slate-200 p-3"></div>
+                    <button type="button" onclick="loadAdminQr()" class="w-full py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-bold cursor-pointer">
+                        Mostrar / Actualizar QR de WhatsApp
+                    </button>
+                </section>
+
+                @if($business->isFeatureEnabled('anuncios_ia'))
+                    <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-3">
+                        <h2 class="font-bold text-slate-900">📣 Anuncios IA y Redes</h2>
+                        <p class="text-xs text-slate-600">Campaña vinculada: <strong>Ref. #{{ $business->sc_project_id }}</strong></p>
+                        <button type="button" onclick="switchTab('resumen'); quickPrompt('Créame un anuncio atractivo para publicar hoy en mis redes sociales')"
+                            class="w-full py-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold cursor-pointer">
+                            ✨ Generar y Programar Anuncio IA
+                        </button>
+                        <a href="{{ $scConnectUrl }}" target="_blank"
+                           class="block text-center py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold">
+                            Conectar Facebook / Instagram / TikTok →
+                        </a>
+                    </section>
+                @endif
+
+                @if($business->isFeatureEnabled('google_maps'))
+                    <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-3">
+                        <h2 class="font-bold text-slate-900">📍 Kit Google Maps & Reseñas 5★</h2>
+                        <p class="text-xs text-slate-600">{{ $gmapsKit['seo_title'] ?? $business->name }}</p>
+                        <a href="{{ $gmapsKit['create_url'] ?? 'https://business.google.com/create' }}" target="_blank"
+                           class="block text-center py-2.5 rounded-xl bg-sky-600 text-white text-xs font-bold">
+                            Dar de alta en Google Maps →
+                        </a>
+                        @if(!empty($gmapsKit['review_qr_svg']))
+                            <div class="flex justify-center pt-2">
+                                <div class="w-36">{!! $gmapsKit['review_qr_svg'] !!}</div>
+                            </div>
+                        @endif
+                    </section>
+                @endif
+            </div>
+        </div>
+
+        {{-- TAB 6: MÓDULOS Y MODO AVANZADO DE SITIO WEB --}}
+        <div data-tab-panel="config" class="tab-panel hidden space-y-6">
+            <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                <h2 class="font-bold text-slate-900 mb-4">🎛️ Módulos Prendibles / Apagables</h2>
+                <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     @foreach(($business->features ?? []) as $key => $enabled)
-                        <label class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer">
+                        <label class="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer hover:bg-slate-100">
                             <span class="text-xs font-semibold text-slate-800">{{ $featureLabels[$key] ?? $key }}</span>
                             <input type="checkbox" {{ $enabled ? 'checked' : '' }} onchange="toggleFeature('{{ $key }}', this.checked)"
                                 class="w-4 h-4 accent-sky-600">
@@ -540,236 +608,126 @@
                     @endforeach
                 </div>
             </section>
-        </div>
 
-        {{-- Centro: Movimientos + Memoria IA --}}
-        <div class="space-y-6">
-            <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-                <h2 class="font-bold text-slate-900 mb-3">📋 Movimientos y Ventas Recientes</h2>
-                @if($operations->isEmpty())
-                    <p class="text-xs text-slate-500">Aún no hay movimientos registrados. Prueba creando una cita o venta arriba.</p>
-                @else
-                    <div class="space-y-2.5 max-h-96 overflow-y-auto">
-                        @foreach($operations as $op)
-                            <div class="p-3 rounded-xl border border-slate-200 text-xs flex items-center justify-between gap-2">
-                                <div>
-                                    <div class="font-bold text-slate-900">
-                                        Ref. #{{ $op->odoo_record_id ?? $op->id }} · {{ $opLabels[$op->operation_type] ?? $op->operation_type }} {{ $op->table_label ? "({$op->table_label})" : '' }}
-                                    </div>
-                                    <div class="text-slate-600">
-                                        {{ $op->customer_name }} · ${{ number_format($op->total_amount, 2) }}
-                                        @if($op->scheduled_at) · {{ $op->scheduled_at->format('d/m H:i') }} @endif
-                                    </div>
-                                </div>
-                                <span class="px-2 py-0.5 rounded-full bg-slate-100 font-semibold text-slate-700">
-                                    {{ $statusLabels[$op->status] ?? $op->status }}
-                                </span>
-                            </div>
-                        @endforeach
+            <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5">
+                <div class="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                        <h2 class="font-extrabold text-slate-900 text-base">🎨 Personalización de Sitio Web y Modo Avanzado</h2>
+                        <p class="text-xs text-slate-500">Activa el modo avanzado para editar textos, imágenes, colores y secciones de tu sitio público.</p>
                     </div>
-                @endif
-            </section>
-
-            <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-                <h2 class="font-bold text-slate-900 mb-3">🧠 Memoria IA (3 Niveles) & Bitácora</h2>
-                <div class="text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-200 mb-3">
-                    <strong>Nivel 1 (ADN):</strong> {{ $semanticMemory['business_name'] }} · Colores {{ $semanticMemory['primary_color'] }}/{{ $semanticMemory['secondary_color'] }} · Estilo {{ $semanticMemory['style_preset'] }}
+                    <label class="inline-flex items-center gap-2.5 px-4 py-2 rounded-xl bg-slate-100 border border-slate-200 cursor-pointer">
+                        <input type="checkbox" id="toggle-advanced-mode" {{ $business->advanced_mode ? 'checked' : '' }} onchange="toggleAdvancedMode(this.checked)" class="w-4 h-4 accent-sky-600">
+                        <span class="text-xs font-bold text-slate-800">Modo Avanzado</span>
+                    </label>
                 </div>
-                <div class="space-y-2 max-h-60 overflow-y-auto">
-                    @foreach($activities as $act)
-                        <div class="text-xs p-2.5 rounded-lg bg-slate-50 border border-slate-200">
-                            <span class="font-bold text-slate-800">{{ str_replace('Odoo', 'Sistema', $act->title) }}</span>
-                            <div class="text-slate-500">{{ str_replace('Odoo', 'Sistema', $act->details) }}</div>
+
+                <form id="advanced-landing-form" onsubmit="saveLandingConfig(event)" class="{{ $business->advanced_mode ? '' : 'hidden' }} space-y-5 pt-4 border-t border-slate-200">
+                    <div class="grid sm:grid-cols-3 gap-4 text-xs">
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Color Principal</label>
+                            <input type="color" id="adv-primary" value="{{ $business->primary_color }}" class="w-full h-10 rounded-lg border border-slate-300 p-1 cursor-pointer">
                         </div>
-                    @endforeach
-                </div>
-            </section>
-        </div>
-
-        {{-- Derecha: WhatsApp QR + Redes + Google Maps --}}
-        <div class="space-y-6">
-            <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-                <h2 class="font-bold text-slate-900 mb-2">📱 WhatsApp del Negocio</h2>
-                <p class="text-xs text-slate-500 mb-3">Estado actual: <strong>{{ ($waStatus['state'] ?? '') === 'open' ? 'Conectado' : 'Desconectado' }}</strong></p>
-                <div id="admin-wa-qr" class="flex justify-center mb-3"></div>
-                <button type="button" onclick="loadAdminQr()" class="w-full py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold cursor-pointer">
-                    Mostrar / Actualizar QR de WhatsApp
-                </button>
-            </section>
-
-            @if($business->isFeatureEnabled('anuncios_ia'))
-            <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
-                <h2 class="font-bold text-slate-900">📣 Anuncios IA y Redes</h2>
-                <p class="text-xs text-slate-600">Campaña vinculada: <strong>Ref. #{{ $business->sc_project_id }}</strong></p>
-                <button type="button" onclick="quickPrompt('Créame un anuncio atractivo para publicar hoy en mis redes sociales')"
-                    class="w-full py-2 rounded-xl bg-slate-900 text-white text-xs font-bold cursor-pointer">
-                    ✨ Generar y Programar Anuncio IA
-                </button>
-                <a href="{{ $scConnectUrl }}" target="_blank"
-                   class="block text-center py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold">
-                    Conectar Facebook / Instagram / TikTok →
-                </a>
-            </section>
-            @endif
-
-            @if($business->isFeatureEnabled('google_maps'))
-            <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
-                <h2 class="font-bold text-slate-900">📍 Kit Google Maps & Reseñas 5★</h2>
-                <p class="text-xs text-slate-600">{{ $gmapsKit['seo_title'] ?? $business->name }}</p>
-                <a href="{{ $gmapsKit['create_url'] ?? 'https://business.google.com/create' }}" target="_blank"
-                   class="block text-center py-2 rounded-xl bg-sky-600 text-white text-xs font-bold">
-                    Dar de alta en Google Maps →
-                </a>
-                @if(!empty($gmapsKit['review_qr_svg']))
-                    <div class="flex justify-center pt-2">
-                        <div class="w-40">{!! $gmapsKit['review_qr_svg'] !!}</div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Color Secundario</label>
+                            <input type="color" id="adv-secondary" value="{{ $business->secondary_color }}" class="w-full h-10 rounded-lg border border-slate-300 p-1 cursor-pointer">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Estilo Visual</label>
+                            <select id="adv-style" class="w-full h-10 rounded-lg border border-slate-300 px-3">
+                                <option value="moderno" {{ $business->style_preset === 'moderno' ? 'selected' : '' }}>Moderno</option>
+                                <option value="elegante" {{ $business->style_preset === 'elegante' ? 'selected' : '' }}>Elegante</option>
+                                <option value="vibrante" {{ $business->style_preset === 'vibrante' ? 'selected' : '' }}>Vibrante</option>
+                            </select>
+                        </div>
                     </div>
-                @endif
+
+                    <div class="grid sm:grid-cols-2 gap-4 text-xs">
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Título Principal (Hero)</label>
+                            <input type="text" id="adv-headline" value="{{ $business->landingSetting('hero_headline', '') }}" placeholder="Ej. Realza tu mejor versión" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Subtítulo</label>
+                            <input type="text" id="adv-subheadline" value="{{ $business->landingSetting('hero_subheadline', '') }}" placeholder="Descripción atractiva de tu negocio" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Etiqueta Superior (Badge)</label>
+                            <input type="text" id="adv-badge" value="{{ $business->landingSetting('hero_badge', '') }}" placeholder="✨ Belleza & Bienestar" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Horario Visible</label>
+                            <input type="text" id="adv-hours" value="{{ $business->landingSetting('business_hours', '') }}" placeholder="Lun-Sáb 9am - 8pm" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="block font-semibold text-slate-700 mb-1">URL de Imagen Principal (opcional)</label>
+                            <input type="url" id="adv-hero-img" value="{{ $business->landingSetting('hero_image_url', '') }}" placeholder="https://..." class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="text-xs font-bold text-slate-700 mb-2">Secciones visibles en el sitio público</div>
+                        <div class="grid sm:grid-cols-5 gap-3 text-xs">
+                            <label class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer">
+                                <input type="checkbox" id="adv-show-pillars" {{ $business->landingSetting('show_pillars', true) ? 'checked' : '' }}> Pilares
+                            </label>
+                            <label class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer">
+                                <input type="checkbox" id="adv-show-gallery" {{ $business->landingSetting('show_gallery', true) ? 'checked' : '' }}> Galería
+                            </label>
+                            <label class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer">
+                                <input type="checkbox" id="adv-show-reviews" {{ $business->landingSetting('show_reviews', true) ? 'checked' : '' }}> Reseñas
+                            </label>
+                            <label class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer">
+                                <input type="checkbox" id="adv-show-map" {{ $business->landingSetting('show_map', true) ? 'checked' : '' }}> Mapa
+                            </label>
+                            <label class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer">
+                                <input type="checkbox" id="adv-show-promos" {{ $business->landingSetting('show_promotions', true) ? 'checked' : '' }}> Promos
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between gap-4">
+                        <span id="adv-save-status" class="text-xs text-emerald-700 font-semibold"></span>
+                        <button type="submit" class="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold cursor-pointer">
+                            Guardar Cambios del Sitio →
+                        </button>
+                    </div>
+                </form>
             </section>
-            @endif
         </div>
-    </div>
+    </main>
 </div>
 @endsection
 
 @push('scripts')
 <script>
 const csrf = document.querySelector('meta[name="csrf-token"]').content;
+const tabStorageKey = "aisy_tab_{{ $business->slug }}";
 
-@if($business->branch === 'estetica' && $business->isFeatureEnabled('agenda'))
-let aisyCalendar = null;
-document.addEventListener('DOMContentLoaded', () => {
-    const calEl = document.getElementById('agenda-calendar');
-    if (calEl && window.FullCalendar) {
-        aisyCalendar = new FullCalendar.Calendar(calEl, {
-            locale: 'es',
-            initialView: 'timeGridWeek',
-            headerToolbar: { left: 'prev,next today', center: 'title', right: '' },
-            slotMinTime: '08:00:00',
-            slotMaxTime: '21:00:00',
-            allDaySlot: false,
-            height: 480,
-            events: @json($calendarEvents),
-        });
-        aisyCalendar.render();
+function switchTab(tabName) {
+    document.querySelectorAll('.tab-panel').forEach((p) => p.classList.add('hidden'));
+    const target = document.querySelector(`[data-tab-panel="${tabName}"]`);
+    if (target) target.classList.remove('hidden');
+
+    document.querySelectorAll('.tab-btn').forEach((b) => {
+        b.classList.remove('bg-slate-900', 'text-white');
+        b.classList.add('text-slate-600', 'hover:bg-slate-100');
+    });
+    const activeBtn = document.querySelector(`[data-tab-btn="${tabName}"]`);
+    if (activeBtn) {
+        activeBtn.classList.add('bg-slate-900', 'text-white');
+        activeBtn.classList.remove('text-slate-600', 'hover:bg-slate-100');
     }
-});
+    localStorage.setItem(tabStorageKey, tabName);
 
-function setCalView(viewName, btn) {
-    if (!aisyCalendar) return;
-    aisyCalendar.changeView(viewName);
-    document.querySelectorAll('.cal-view-btn').forEach((el) => {
-        el.classList.remove('bg-white', 'text-slate-900', 'shadow-sm');
-        el.classList.add('text-slate-700');
-    });
-    if (btn) {
-        btn.classList.add('bg-white', 'text-slate-900', 'shadow-sm');
-        btn.classList.remove('text-slate-700');
-    }
-}
-@endif
-
-async function toggleFeature(feature, enabled) {
-    await fetch("{{ route('business.admin.toggle', ['slug' => $business->slug]) }}", {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
-        body: JSON.stringify({ feature, enabled })
-    });
-    window.location.reload();
-}
-
-function syncPosPrice() {
-    const sel = document.getElementById('pos-item');
-    const opt = sel.options[sel.selectedIndex];
-    const customInput = document.getElementById('pos-custom-name');
-    document.getElementById('pos-price').value = opt.dataset.price || 150;
-    if (sel.value === '0') {
-        customInput.classList.remove('hidden');
-    } else {
-        customInput.classList.add('hidden');
-    }
-}
-
-async function submitAppointment(e) {
-    e.preventDefault();
-    await fetch("{{ route('business.admin.appointments', ['slug' => $business->slug]) }}", {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
-        body: JSON.stringify({
-            customer_name: document.getElementById('appt-customer').value,
-            customer_phone: document.getElementById('appt-phone').value,
-            service_name: document.getElementById('appt-service').value,
-            scheduled_at: document.getElementById('appt-date').value,
-        })
-    });
-    window.location.reload();
-}
-
-async function submitPosSale(e) {
-    e.preventDefault();
-    const sel = document.getElementById('pos-item');
-    const opt = sel.options[sel.selectedIndex];
-    const customName = document.getElementById('pos-custom-name').value;
-    await fetch("{{ route('business.admin.pos_sale', ['slug' => $business->slug]) }}", {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
-        body: JSON.stringify({
-            catalog_item_id: parseInt(sel.value, 10) || 0,
-            item_name: sel.value === '0' ? customName : (opt.dataset.name || 'Venta'),
-            customer_name: document.getElementById('pos-customer').value || 'Cliente Mostrador',
-            qty: parseInt(document.getElementById('pos-qty').value, 10) || 1,
-            price: parseFloat(document.getElementById('pos-price').value) || 0,
-            table_label: document.getElementById('pos-table')?.value || null,
-        })
-    });
-    window.location.reload();
-}
-
-async function submitPromotion(e) {
-    e.preventDefault();
-    await fetch("{{ route('business.admin.promotions', ['slug' => $business->slug]) }}", {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
-        body: JSON.stringify({
-            title: document.getElementById('promo-title').value,
-            discount_percent: parseFloat(document.getElementById('promo-discount').value) || 15,
-            description: document.getElementById('promo-desc').value,
-        })
-    });
-    window.location.reload();
-}
-
-async function submitCatalogItem(e, category) {
-    e.preventDefault();
-    const isQr = category === 'Platillo';
-    const name = document.getElementById(isQr ? 'cat-name-qr' : 'cat-name-web').value;
-    const price = parseFloat(document.getElementById(isQr ? 'cat-price-qr' : 'cat-price-web').value) || 100;
-    await fetch("{{ route('business.admin.catalog', ['slug' => $business->slug]) }}", {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
-        body: JSON.stringify({ name, price, category })
-    });
-    window.location.reload();
-}
-
-async function updateOpStatus(opId, status) {
-    await fetch(`{{ url("/{$business->slug}/admin/operations") }}/${opId}/status`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
-        body: JSON.stringify({ status })
-    });
-    window.location.reload();
-}
-
-function selectTable(tableName) {
-    const input = document.getElementById('pos-table');
-    if (input) {
-        input.value = tableName;
-        input.focus();
+    if (tabName === 'operacion' && window.aisyCalendar) {
+        setTimeout(() => window.aisyCalendar.updateSize(), 60);
     }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    const savedTab = localStorage.getItem(tabStorageKey) || 'resumen';
+    switchTab(savedTab);
+
     const qrTarget = document.getElementById('menu-qr-canvas');
     if (qrTarget && window.QRCode) {
         new QRCode(qrTarget, {
@@ -781,6 +739,39 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+@if($business->branch === 'estetica' && $business->isFeatureEnabled('agenda'))
+window.aisyCalendar = null;
+document.addEventListener('DOMContentLoaded', () => {
+    const calEl = document.getElementById('agenda-calendar');
+    if (calEl && window.FullCalendar) {
+        window.aisyCalendar = new FullCalendar.Calendar(calEl, {
+            locale: 'es',
+            initialView: 'timeGridWeek',
+            headerToolbar: { left: 'prev,next today', center: 'title', right: '' },
+            slotMinTime: '08:00:00',
+            slotMaxTime: '21:00:00',
+            allDaySlot: false,
+            height: 480,
+            events: @json($calendarEvents),
+        });
+        window.aisyCalendar.render();
+    }
+});
+
+function setCalView(viewName, btn) {
+    if (!window.aisyCalendar) return;
+    window.aisyCalendar.changeView(viewName);
+    document.querySelectorAll('.cal-view-btn').forEach((el) => {
+        el.classList.remove('bg-white', 'text-slate-900', 'shadow-sm');
+        el.classList.add('text-slate-700');
+    });
+    if (btn) {
+        btn.classList.add('bg-white', 'text-slate-900', 'shadow-sm');
+        btn.classList.remove('text-slate-700');
+    }
+}
+@endif
 
 function downloadMenuQr() {
     const canvas = document.querySelector('#menu-qr-canvas canvas');
@@ -832,6 +823,90 @@ async function deleteCatalogRow(id) {
         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf }
     });
     window.location.reload();
+}
+
+async function toggleFeature(feature, enabled) {
+    await fetch("{{ route('business.admin.toggle', ['slug' => $business->slug]) }}", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+        body: JSON.stringify({ feature, enabled })
+    });
+    window.location.reload();
+}
+
+function syncPosPrice() {
+    const sel = document.getElementById('pos-item');
+    const opt = sel.options[sel.selectedIndex];
+    const customInput = document.getElementById('pos-custom-name');
+    document.getElementById('pos-price').value = opt.dataset.price || 150;
+    if (sel.value === '0') customInput.classList.remove('hidden');
+    else customInput.classList.add('hidden');
+}
+
+async function submitAppointment(e) {
+    e.preventDefault();
+    await fetch("{{ route('business.admin.appointments', ['slug' => $business->slug]) }}", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+        body: JSON.stringify({
+            customer_name: document.getElementById('appt-customer').value,
+            customer_phone: document.getElementById('appt-phone').value,
+            service_name: document.getElementById('appt-service').value,
+            scheduled_at: document.getElementById('appt-date').value,
+        })
+    });
+    window.location.reload();
+}
+
+async function submitPosSale(e) {
+    e.preventDefault();
+    const sel = document.getElementById('pos-item');
+    const opt = sel.options[sel.selectedIndex];
+    const customName = document.getElementById('pos-custom-name').value;
+    await fetch("{{ route('business.admin.pos_sale', ['slug' => $business->slug]) }}", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+        body: JSON.stringify({
+            catalog_item_id: parseInt(sel.value, 10) || 0,
+            item_name: sel.value === '0' ? customName : (opt.dataset.name || 'Venta'),
+            customer_name: document.getElementById('pos-customer').value || 'Cliente Mostrador',
+            qty: parseInt(document.getElementById('pos-qty').value, 10) || 1,
+            price: parseFloat(document.getElementById('pos-price').value) || 0,
+            table_label: document.getElementById('pos-table')?.value || null,
+        })
+    });
+    window.location.reload();
+}
+
+async function submitPromotion(e) {
+    e.preventDefault();
+    await fetch("{{ route('business.admin.promotions', ['slug' => $business->slug]) }}", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+        body: JSON.stringify({
+            title: document.getElementById('promo-title').value,
+            discount_percent: parseFloat(document.getElementById('promo-discount').value) || 15,
+            description: document.getElementById('promo-desc').value,
+        })
+    });
+    window.location.reload();
+}
+
+async function updateOpStatus(opId, status) {
+    await fetch(`{{ url("/{$business->slug}/admin/operations") }}/${opId}/status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+        body: JSON.stringify({ status })
+    });
+    window.location.reload();
+}
+
+function selectTable(tableName) {
+    const input = document.getElementById('pos-table');
+    if (input) {
+        input.value = tableName;
+        input.focus();
+    }
 }
 
 async function toggleAdvancedMode(enabled) {
@@ -932,6 +1007,7 @@ async function triggerDeadTimes() {
         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf }
     });
     const data = await res.json();
+    switchTab('resumen');
     appendChat('ai', data.recommended ? `⚡ <b>Tiempo muerto detectado:</b> ${data.message}` : '✅ Demanda saludable hoy.');
 }
 </script>
