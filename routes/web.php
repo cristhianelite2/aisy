@@ -31,6 +31,10 @@ Route::middleware('auth')->group(function (): void {
     Route::post('/{slug}/admin/dead-times', [BusinessAdminController::class, 'triggerDeadTimes'])->name('business.admin.dead_times');
     Route::post('/{slug}/admin/catalog', [BusinessAdminController::class, 'addCatalogItem'])->name('business.admin.catalog');
     Route::post('/{slug}/admin/operations/{id}/status', [BusinessAdminController::class, 'updateOperationStatus'])->name('business.admin.op_status');
+    Route::post('/{slug}/admin/appointments', [BusinessAdminController::class, 'createAppointment'])->name('business.admin.appointments');
+    Route::post('/{slug}/admin/pos-sale', [BusinessAdminController::class, 'createPosSale'])->name('business.admin.pos_sale');
+    Route::post('/{slug}/admin/promotions', [BusinessAdminController::class, 'createPromotion'])->name('business.admin.promotions');
+    Route::post('/{slug}/admin/landing-config', [BusinessAdminController::class, 'saveLandingConfig'])->name('business.admin.landing_config');
 });
 
 // Layer 1: Custom Business Landing Page (Public)

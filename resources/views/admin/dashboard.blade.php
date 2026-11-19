@@ -92,6 +92,7 @@
         </div>
     </header>
 
+    {{-- Métricas --}}
     <div class="grid sm:grid-cols-4 gap-4">
         <div class="bg-white p-4 rounded-2xl border border-slate-200">
             <div class="text-xs text-slate-500">Ventas de Hoy</div>
@@ -119,7 +120,72 @@
         </div>
     </div>
 
-    @if($business->branch === 'estetica')
+    {{-- Módulos Habilitados Interactivos --}}
+    <div class="grid lg:grid-cols-3 gap-6">
+        @if($business->isFeatureEnabled('agenda') && $business->branch === 'estetica')
+            <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
+                <h2 class="font-bold text-slate-900">📅 Agendar Nueva Cita</h2>
+                <form onsubmit="submitAppointment(event)" class="space-y-3 text-xs">
+                    <input type="text" id="appt-customer" required placeholder="Nombre del cliente" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                    <input type="text" id="appt-phone" placeholder="WhatsApp del cliente (opcional)" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                    <select id="appt-service" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                        @foreach($catalog as $item)
+                            <option value="{{ $item->name }}">{{ $item->name }} (${{ number_format($item->price, 0) }})</option>
+                        @endforeach
+                    </select>
+                    <input type="datetime-local" id="appt-date" value="{{ now()->addDay()->setTime(12, 0)->format('Y-m-d\TH:i') }}" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                    <button type="submit" class="w-full py-2.5 rounded-xl text-white font-bold cursor-pointer" style="background: {{ $business->primary_color }}">
+                        Guardar Cita en Calendario
+                    </button>
+                </form>
+            </section>
+        @endif
+
+        @if($business->isFeatureEnabled('ventas_pos') || $business->isFeatureEnabled('pos') || $business->isFeatureEnabled('pos_voz'))
+            <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
+                <h2 class="font-bold text-slate-900">💳 Cobro Rápido / POS</h2>
+                <form onsubmit="submitPosSale(event)" class="space-y-3 text-xs">
+                    <input type="text" id="pos-customer" placeholder="Cliente (o Mostrador)" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                    <select id="pos-item" onchange="syncPosPrice()" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                        @foreach($catalog as $item)
+                            <option value="{{ $item->id }}" data-price="{{ $item->price }}" data-name="{{ $item->name }}">
+                                {{ $item->name }} — ${{ number_format($item->price, 2) }}
+                            </option>
+                        @endforeach
+                        <option value="0" data-price="150" data-name="Concepto personalizado">Otro concepto personalizado...</option>
+                    </select>
+                    <input type="text" id="pos-custom-name" placeholder="Nombre si es personalizado" class="hidden w-full rounded-xl border border-slate-300 px-3 py-2">
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="number" id="pos-qty" value="1" min="1" placeholder="Cant." class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                        <input type="number" id="pos-price" value="{{ $catalog->first()?->price ?? 150 }}" step="0.01" placeholder="Precio" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                    </div>
+                    @if($business->branch === 'comandas')
+                        <input type="text" id="pos-table" placeholder="Mesa / Para llevar" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                    @endif
+                    <button type="submit" class="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold cursor-pointer">
+                        Registrar Cobro Ahora
+                    </button>
+                </form>
+            </section>
+        @endif
+
+        @if($business->isFeatureEnabled('promociones'))
+            <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3">
+                <h2 class="font-bold text-slate-900">🏷️ Crear Promoción</h2>
+                <form onsubmit="submitPromotion(event)" class="space-y-3 text-xs">
+                    <input type="text" id="promo-title" required placeholder="Título (ej. 20% en Tinte Martes)" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                    <input type="number" id="promo-discount" value="20" min="1" max="90" placeholder="% Descuento" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                    <textarea id="promo-desc" rows="2" placeholder="Condiciones visibles en tu sitio web..." class="w-full rounded-xl border border-slate-300 px-3 py-2"></textarea>
+                    <button type="submit" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold cursor-pointer">
+                        Publicar Promoción en Sitio
+                    </button>
+                </form>
+            </section>
+        @endif
+    </div>
+
+    {{-- Calendario Semanal/Diario/Mensual para Estéticas --}}
+    @if($business->branch === 'estetica' && $business->isFeatureEnabled('agenda'))
         <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
             <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
                 <div>
@@ -135,6 +201,92 @@
             <div id="agenda-calendar" class="min-h-[460px]"></div>
         </section>
     @endif
+
+    {{-- Modo Avanzado: Personalización Completa de Landing y Módulos --}}
+    <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <div>
+                <h2 class="font-extrabold text-slate-900 text-base">🎨 Personalización de Sitio Web y Modo Avanzado</h2>
+                <p class="text-xs text-slate-500">Activa el modo avanzado para editar textos, imágenes, colores y secciones de tu sitio público.</p>
+            </div>
+            <label class="inline-flex items-center gap-2.5 px-4 py-2 rounded-xl bg-slate-100 border border-slate-200 cursor-pointer">
+                <input type="checkbox" id="toggle-advanced-mode" {{ $business->advanced_mode ? 'checked' : '' }} onchange="toggleAdvancedMode(this.checked)" class="w-4 h-4 accent-sky-600">
+                <span class="text-xs font-bold text-slate-800">Modo Avanzado</span>
+            </label>
+        </div>
+
+        <form id="advanced-landing-form" onsubmit="saveLandingConfig(event)" class="{{ $business->advanced_mode ? '' : 'hidden' }} space-y-5 pt-4 border-t border-slate-200">
+            <div class="grid sm:grid-cols-3 gap-4 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Color Principal</label>
+                    <input type="color" id="adv-primary" value="{{ $business->primary_color }}" class="w-full h-10 rounded-lg border border-slate-300 p-1 cursor-pointer">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Color Secundario</label>
+                    <input type="color" id="adv-secondary" value="{{ $business->secondary_color }}" class="w-full h-10 rounded-lg border border-slate-300 p-1 cursor-pointer">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Estilo Visual</label>
+                    <select id="adv-style" class="w-full h-10 rounded-lg border border-slate-300 px-3">
+                        <option value="moderno" {{ $business->style_preset === 'moderno' ? 'selected' : '' }}>Moderno</option>
+                        <option value="elegante" {{ $business->style_preset === 'elegante' ? 'selected' : '' }}>Elegante</option>
+                        <option value="vibrante" {{ $business->style_preset === 'vibrante' ? 'selected' : '' }}>Vibrante</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid sm:grid-cols-2 gap-4 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Título Principal (Hero)</label>
+                    <input type="text" id="adv-headline" value="{{ $business->landingSetting('hero_headline', '') }}" placeholder="Ej. Realza tu mejor versión" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Subtítulo</label>
+                    <input type="text" id="adv-subheadline" value="{{ $business->landingSetting('hero_subheadline', '') }}" placeholder="Descripción atractiva de tu negocio" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Etiqueta Superior (Badge)</label>
+                    <input type="text" id="adv-badge" value="{{ $business->landingSetting('hero_badge', '') }}" placeholder="✨ Belleza & Bienestar" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Horario Visible</label>
+                    <input type="text" id="adv-hours" value="{{ $business->landingSetting('business_hours', '') }}" placeholder="Lun-Sáb 9am - 8pm" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="block font-semibold text-slate-700 mb-1">URL de Imagen Principal (opcional)</label>
+                    <input type="url" id="adv-hero-img" value="{{ $business->landingSetting('hero_image_url', '') }}" placeholder="https://..." class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                </div>
+            </div>
+
+            <div>
+                <div class="text-xs font-bold text-slate-700 mb-2">Secciones visibles en el sitio público</div>
+                <div class="grid sm:grid-cols-5 gap-3 text-xs">
+                    <label class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer">
+                        <input type="checkbox" id="adv-show-pillars" {{ $business->landingSetting('show_pillars', true) ? 'checked' : '' }}> Pilares
+                    </label>
+                    <label class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer">
+                        <input type="checkbox" id="adv-show-gallery" {{ $business->landingSetting('show_gallery', true) ? 'checked' : '' }}> Galería
+                    </label>
+                    <label class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer">
+                        <input type="checkbox" id="adv-show-reviews" {{ $business->landingSetting('show_reviews', true) ? 'checked' : '' }}> Reseñas
+                    </label>
+                    <label class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer">
+                        <input type="checkbox" id="adv-show-map" {{ $business->landingSetting('show_map', true) ? 'checked' : '' }}> Mapa
+                    </label>
+                    <label class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer">
+                        <input type="checkbox" id="adv-show-promos" {{ $business->landingSetting('show_promotions', true) ? 'checked' : '' }}> Promos
+                    </label>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between gap-4">
+                <span id="adv-save-status" class="text-xs text-emerald-700 font-semibold"></span>
+                <button type="submit" class="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold cursor-pointer">
+                    Guardar Cambios del Sitio →
+                </button>
+            </div>
+        </form>
+    </section>
 
     <div class="grid lg:grid-cols-3 gap-8">
         {{-- Izquierda: Consola del Asistente + Módulos --}}
@@ -171,12 +323,12 @@
             </section>
         </div>
 
-        {{-- Centro: Operaciones + Memoria IA --}}
+        {{-- Centro: Movimientos + Memoria IA --}}
         <div class="space-y-6">
             <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
                 <h2 class="font-bold text-slate-900 mb-3">📋 Movimientos y Ventas Recientes</h2>
                 @if($operations->isEmpty())
-                    <p class="text-xs text-slate-500">Aún no hay movimientos registrados. Prueba dictando una venta o cita al asistente.</p>
+                    <p class="text-xs text-slate-500">Aún no hay movimientos registrados. Prueba creando una cita o venta arriba.</p>
                 @else
                     <div class="space-y-2.5 max-h-96 overflow-y-auto">
                         @foreach($operations as $op)
@@ -257,7 +409,7 @@
 <script>
 const csrf = document.querySelector('meta[name="csrf-token"]').content;
 
-@if($business->branch === 'estetica')
+@if($business->branch === 'estetica' && $business->isFeatureEnabled('agenda'))
 let aisyCalendar = null;
 document.addEventListener('DOMContentLoaded', () => {
     const calEl = document.getElementById('agenda-calendar');
@@ -265,11 +417,7 @@ document.addEventListener('DOMContentLoaded', () => {
         aisyCalendar = new FullCalendar.Calendar(calEl, {
             locale: 'es',
             initialView: 'timeGridWeek',
-            headerToolbar: {
-                left: 'prev,next today',
-                center: 'title',
-                right: ''
-            },
+            headerToolbar: { left: 'prev,next today', center: 'title', right: '' },
             slotMinTime: '08:00:00',
             slotMaxTime: '21:00:00',
             allDaySlot: false,
@@ -300,6 +448,109 @@ async function toggleFeature(feature, enabled) {
         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
         body: JSON.stringify({ feature, enabled })
     });
+    window.location.reload();
+}
+
+function syncPosPrice() {
+    const sel = document.getElementById('pos-item');
+    const opt = sel.options[sel.selectedIndex];
+    const customInput = document.getElementById('pos-custom-name');
+    document.getElementById('pos-price').value = opt.dataset.price || 150;
+    if (sel.value === '0') {
+        customInput.classList.remove('hidden');
+    } else {
+        customInput.classList.add('hidden');
+    }
+}
+
+async function submitAppointment(e) {
+    e.preventDefault();
+    await fetch("{{ route('business.admin.appointments', ['slug' => $business->slug]) }}", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+        body: JSON.stringify({
+            customer_name: document.getElementById('appt-customer').value,
+            customer_phone: document.getElementById('appt-phone').value,
+            service_name: document.getElementById('appt-service').value,
+            scheduled_at: document.getElementById('appt-date').value,
+        })
+    });
+    window.location.reload();
+}
+
+async function submitPosSale(e) {
+    e.preventDefault();
+    const sel = document.getElementById('pos-item');
+    const opt = sel.options[sel.selectedIndex];
+    const customName = document.getElementById('pos-custom-name').value;
+    await fetch("{{ route('business.admin.pos_sale', ['slug' => $business->slug]) }}", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+        body: JSON.stringify({
+            catalog_item_id: parseInt(sel.value, 10) || 0,
+            item_name: sel.value === '0' ? customName : (opt.dataset.name || 'Venta'),
+            customer_name: document.getElementById('pos-customer').value || 'Cliente Mostrador',
+            qty: parseInt(document.getElementById('pos-qty').value, 10) || 1,
+            price: parseFloat(document.getElementById('pos-price').value) || 0,
+            table_label: document.getElementById('pos-table')?.value || null,
+        })
+    });
+    window.location.reload();
+}
+
+async function submitPromotion(e) {
+    e.preventDefault();
+    await fetch("{{ route('business.admin.promotions', ['slug' => $business->slug]) }}", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+        body: JSON.stringify({
+            title: document.getElementById('promo-title').value,
+            discount_percent: parseFloat(document.getElementById('promo-discount').value) || 15,
+            description: document.getElementById('promo-desc').value,
+        })
+    });
+    window.location.reload();
+}
+
+async function toggleAdvancedMode(enabled) {
+    const form = document.getElementById('advanced-landing-form');
+    if (enabled) form.classList.remove('hidden');
+    else form.classList.add('hidden');
+
+    await fetch("{{ route('business.admin.landing_config', ['slug' => $business->slug]) }}", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+        body: JSON.stringify({ advanced_mode: enabled })
+    });
+}
+
+async function saveLandingConfig(e) {
+    e.preventDefault();
+    const statusEl = document.getElementById('adv-save-status');
+    statusEl.textContent = 'Guardando...';
+    await fetch("{{ route('business.admin.landing_config', ['slug' => $business->slug]) }}", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+        body: JSON.stringify({
+            advanced_mode: true,
+            primary_color: document.getElementById('adv-primary').value,
+            secondary_color: document.getElementById('adv-secondary').value,
+            style_preset: document.getElementById('adv-style').value,
+            landing_config: {
+                hero_headline: document.getElementById('adv-headline').value,
+                hero_subheadline: document.getElementById('adv-subheadline').value,
+                hero_badge: document.getElementById('adv-badge').value,
+                business_hours: document.getElementById('adv-hours').value,
+                hero_image_url: document.getElementById('adv-hero-img').value,
+                show_pillars: document.getElementById('adv-show-pillars').checked,
+                show_gallery: document.getElementById('adv-show-gallery').checked,
+                show_reviews: document.getElementById('adv-show-reviews').checked,
+                show_map: document.getElementById('adv-show-map').checked,
+                show_promotions: document.getElementById('adv-show-promos').checked,
+            }
+        })
+    });
+    statusEl.textContent = '✅ Cambios guardados en tu sitio público.';
 }
 
 function appendChat(who, html) {

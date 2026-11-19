@@ -1,5 +1,10 @@
 # Changelog — Aisy
 
+## [0.3.0] - 2026-11-18
+### Added
+- **Módulos Interactivos en Panel Admin (`/{slug}/admin`)**: Los módulos habilitados (`Agenda de Citas`, `Cobro Rápido / POS`, `Promociones y Lealtad`) ahora muestran sus formularios operativos directos dentro del panel (`POST /{slug}/admin/appointments`, `pos-sale`, `promotions`) sincronizados en tiempo real.
+- **Modo Avanzado de Personalización de Sitio (`advanced_mode` + `landing_config`)**: Desactivado por defecto; al habilitarlo en `/{slug}/admin` permite editar colores, estilo, badge, título, subtítulo, horario, imagen hero y prender/apagar secciones de la landing (`Pilares`, `Galería`, `Reseñas`, `Mapa`, `Promociones`).
+
 ## [0.2.2] - 2026-11-18
 ### Added
 - **Cuenta Maestra Multi-Company en Odoo + Consola `/maestro`**: Comando `php artisan aisy:sync-odoo` que crea/actualiza la cuenta maestra `maestro@aisy.ceballosleon.com` en Odoo (`:8069`) con acceso multi-compañía a todos los negocios, y vista `/maestro` en Laravel (exclusiva para `is_admin`) con tabla global de negocios y registro de actividades.

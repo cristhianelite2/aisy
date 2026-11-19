@@ -116,6 +116,17 @@
             ],
         ],
     };
+
+    $heroBadge = $business->landingSetting('hero_badge', $branchTheme['badge']);
+    $heroHeadline = $business->landingSetting('hero_headline', $branchTheme['headline']);
+    $heroSubheadline = $business->landingSetting('hero_subheadline', $branchTheme['sub']);
+    $heroImage = $business->landingSetting('hero_image_url', $branchTheme['hero_img']);
+    $businessHours = $business->landingSetting('business_hours', 'Abierto hoy');
+    $showPillars = (bool) $business->landingSetting('show_pillars', true);
+    $showGallery = (bool) $business->landingSetting('show_gallery', true);
+    $showReviews = (bool) $business->landingSetting('show_reviews', true);
+    $showMap = (bool) $business->landingSetting('show_map', true);
+    $showPromotions = (bool) $business->landingSetting('show_promotions', true);
 @endphp
 
 @section('content')
@@ -170,15 +181,15 @@
         <div class="relative max-w-7xl mx-auto grid lg:grid-cols-12 gap-10 items-center">
             <div class="lg:col-span-7 space-y-6">
                 <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold bg-white/10 border border-white/15 backdrop-blur-md text-white">
-                    {{ $branchTheme['badge'] }}
+                    {{ $heroBadge }}
                 </span>
 
                 <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.08] text-white">
-                    {{ $branchTheme['headline'] }}
+                    {{ $heroHeadline }}
                 </h1>
 
                 <p class="text-base sm:text-lg text-slate-300 max-w-xl leading-relaxed">
-                    {{ $branchTheme['sub'] }}
+                    {{ $heroSubheadline }}
                 </p>
 
                 <div class="flex flex-wrap items-center gap-3.5 pt-2">
@@ -205,7 +216,7 @@
 
             <div class="lg:col-span-5 relative">
                 <div class="relative rounded-3xl overflow-hidden border border-white/15 shadow-2xl animate-float">
-                    <img src="{{ $branchTheme['hero_img'] }}" alt="{{ $business->name }}"
+                    <img src="{{ $heroImage }}" alt="{{ $business->name }}"
                          class="w-full h-[380px] sm:h-[440px] object-cover">
                     <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent"></div>
                     <div class="absolute bottom-5 left-5 right-5 p-4 rounded-2xl bg-slate-900/80 backdrop-blur-xl border border-white/15 flex items-center justify-between gap-3">
@@ -214,7 +225,7 @@
                             <div class="text-sm font-extrabold text-white">{{ $business->name }}</div>
                         </div>
                         <span class="px-3 py-1.5 rounded-xl text-xs font-bold text-white brand-gradient">
-                            Abierto hoy
+                            {{ $businessHours }}
                         </span>
                     </div>
                 </div>
@@ -231,6 +242,7 @@
     @endif
 
     {{-- Value Pillars --}}
+    @if($showPillars)
     <section id="experiencia" class="py-14 px-4 sm:px-6 border-y border-white/10 bg-slate-900/50">
         <div class="max-w-7xl mx-auto grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
             @foreach($branchTheme['pillars'] as $pillar)
@@ -244,9 +256,10 @@
             @endforeach
         </div>
     </section>
+    @endif
 
     {{-- Active Promotions Spotlight --}}
-    @if($business->isFeatureEnabled('promociones') && $promotions->isNotEmpty())
+    @if($showPromotions && $business->isFeatureEnabled('promociones') && $promotions->isNotEmpty())
         <section class="py-14 px-4 sm:px-6">
             <div class="max-w-7xl mx-auto">
                 <div class="reveal rounded-3xl p-6 sm:p-8 brand-gradient shadow-2xl">
@@ -271,6 +284,7 @@
     @endif
 
     {{-- Visual Gallery --}}
+    @if($showGallery)
     <section id="galeria" class="py-16 px-4 sm:px-6">
         <div class="max-w-7xl mx-auto">
             <div class="reveal flex flex-wrap items-end justify-between gap-4 mb-8">
@@ -294,6 +308,7 @@
             </div>
         </div>
     </section>
+    @endif
 
     {{-- Interactive Catalog + Booking/Order Panel --}}
     <section id="catalogo" class="py-16 px-4 sm:px-6 bg-slate-900/60 border-y border-white/10">
@@ -390,6 +405,7 @@
     </section>
 
     {{-- Testimonials --}}
+    @if($showReviews)
     <section id="opiniones" class="py-16 px-4 sm:px-6">
         <div class="max-w-7xl mx-auto">
             <div class="reveal text-center max-w-2xl mx-auto mb-10">
@@ -407,8 +423,10 @@
             </div>
         </div>
     </section>
+    @endif
 
     {{-- Location & Interactive Map --}}
+    @if($showMap)
     <section id="ubicacion" class="py-16 px-4 sm:px-6 bg-slate-900/50 border-t border-white/10">
         <div class="max-w-7xl mx-auto">
             <div class="reveal rounded-3xl bg-slate-950 border border-white/10 p-6 sm:p-8 space-y-5">
@@ -438,6 +456,7 @@
             </div>
         </div>
     </section>
+    @endif
 
     {{-- Footer --}}
     <footer class="py-8 px-4 border-t border-white/10 text-center text-xs text-slate-500">

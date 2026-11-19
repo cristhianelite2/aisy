@@ -25,6 +25,8 @@ class Business extends Model
         'secondary_color',
         'style_preset',
         'features',
+        'advanced_mode',
+        'landing_config',
         'ai_memory_semantic',
         'odoo_company_id',
         'odoo_pos_config_id',
@@ -40,6 +42,8 @@ class Business extends Model
 
     protected $casts = [
         'features' => 'array',
+        'advanced_mode' => 'boolean',
+        'landing_config' => 'array',
         'ai_memory_semantic' => 'array',
         'gmaps_kit' => 'array',
         'provisioning_steps' => 'array',
@@ -140,6 +144,15 @@ class Business extends Model
         $features = $this->features ?? static::defaultFeaturesForBranch($this->branch);
 
         return (bool) ($features[$feature] ?? false);
+    }
+
+    public function landingSetting(string $key, mixed $default = null): mixed
+    {
+        $cfg = $this->landing_config ?? [];
+
+        return array_key_exists($key, $cfg) && $cfg[$key] !== null && $cfg[$key] !== ''
+            ? $cfg[$key]
+            : $default;
     }
 
     public function toggleFeature(string $feature, ?bool $enabled = null): array

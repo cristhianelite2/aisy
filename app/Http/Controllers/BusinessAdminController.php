@@ -137,4 +137,90 @@ class BusinessAdminController extends Controller
 
         return response()->json(['ok' => true, 'operation' => $op]);
     }
+
+    public function createAppointment(Request $request, string $slug, OdooBusinessService $odoo): JsonResponse
+    {
+        $business = Business::where('slug', $slug)->firstOrFail();
+        $this->authorizeBusiness($request, $business);
+
+        $op = $odoo->scheduleAppointment($business, [
+            'customer_name' => (string) $request->input('customer_name', 'Cliente'),
+            'customer_phone' => (string) $request->input('customer_phone', ''),
+            'service_name' => (string) $request->input('service_name', 'Servicio'),
+            'scheduled_at' => $request->input('scheduled_at') ?: now()->addDay()->setTime(12, 0)->toIso8601String(),
+            'source' => 'admin',
+        ]);
+
+        return response()->json(['ok' => true, 'operation' => $op]);
+    }
+
+    public function createPosSale(Request $request, string $slug, OdooBusinessService $odoo): JsonResponse
+    {
+        $business = Business::where('slug', $slug)->firstOrFail();
+        $this->authorizeBusiness($request, $business);
+
+        $itemId = (int) $request->input('catalog_item_id', 0);
+        $catalogItem = $itemId ? $business->catalogItems()->find($itemId) : null;
+        $qty = max(1, (int) $request->input('qty', 1));
+        $name = $catalogItem?->name ?: (string) $request->input('item_name', 'Venta Mostrador');
+        $price = (float) ($request->input('price') ?: ($catalogItem?->price ?? 150));
+
+        $op = $odoo->registerSaleOrOrder($business, [
+            'operation_type' => $business->branch === 'comandas' ? 'comanda' : 'sale',
+            'customer_name' => (string) $request->input('customer_name', 'Cliente Mostrador'),
+            'customer_phone' => (string) $request->input('customer_phone', ''),
+            'table_label' => $request->input('table_label'),
+            'items' => [['name' => $name, 'qty' => $qty, 'price' => $price]],
+            'source' => 'admin',
+        ]);
+
+        return response()->json(['ok' => true, 'operation' => $op]);
+    }
+
+    public function createPromotion(Request $request, string $slug, OdooBusinessService $odoo): JsonResponse
+    {
+        $business = Business::where('slug', $slug)->firstOrFail();
+        $this->authorizeBusiness($request, $business);
+
+        $op = $odoo->createPromotion($business, [
+            'title' => (string) $request->input('title', 'Promoción Especial'),
+            'discount_percent' => (float) $request->input('discount_percent', 15),
+            'description' => (string) $request->input('description', ''),
+            'source' => 'admin',
+        ]);
+
+        return response()->json(['ok' => true, 'operation' => $op]);
+    }
+
+    public function saveLandingConfig(Request $request, string $slug): JsonResponse
+    {
+        $business = Business::where('slug', $slug)->firstOrFail();
+        $this->authorizeBusiness($request, $business);
+
+        if ($request->has('advanced_mode')) {
+            $business->advanced_mode = (bool) $request->boolean('advanced_mode');
+        }
+        if ($request->filled('primary_color')) {
+            $business->primary_color = (string) $request->input('primary_color');
+        }
+        if ($request->filled('secondary_color')) {
+            $business->secondary_color = (string) $request->input('secondary_color');
+        }
+        if ($request->filled('style_preset')) {
+            $business->style_preset = (string) $request->input('style_preset');
+        }
+
+        if ($request->has('landing_config') && is_array($request->input('landing_config'))) {
+            $current = $business->landing_config ?? [];
+            $business->landing_config = array_merge($current, $request->input('landing_config'));
+        }
+
+        $business->save();
+
+        return response()->json([
+            'ok' => true,
+            'advanced_mode' => $business->advanced_mode,
+            'landing_config' => $business->landing_config,
+        ]);
+    }
 }
