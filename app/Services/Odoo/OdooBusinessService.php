@@ -45,6 +45,10 @@ class OdooBusinessService
             $business->save();
         }
 
+        if ($odooConnected && $companyId) {
+            $this->grantMasterAccessToCompany((int) $companyId);
+        }
+
         $seeded = $this->seedDefaultCatalog($business, $odooConnected);
 
         BusinessActivity::create([
@@ -405,5 +409,24 @@ class OdooBusinessService
             'phone' => $phone ?: '',
             'company_id' => (int) $business->odoo_company_id,
         ]);
+    }
+
+    public function grantMasterAccessToCompany(int $companyId): void
+    {
+        try {
+            if (!$this->odoo->isAvailable()) {
+                return;
+            }
+            $users = $this->odoo->searchRead('res.users', [['login', 'in', ['admin', 'maestro@aisy.ceballosleon.com']]], ['id']);
+            foreach ($users as $u) {
+                if (!empty($u['id'])) {
+                    $this->odoo->write('res.users', [(int) $u['id']], [
+                        'company_ids' => [[4, $companyId]],
+                    ]);
+                }
+            }
+        } catch (\Throwable) {
+            // Non-fatal
+        }
     }
 }

@@ -46,6 +46,11 @@ class SecurityAndAuthTest extends TestCase
             ->assertSee('Mensual')
             ->assertDontSee('Odoo')
             ->assertDontSee('APPOINTMENT');
+
+        // 4. Non-admin cannot access /maestro, admin can
+        $this->actingAs($owner)->get('/maestro')->assertForbidden();
+        $admin = User::factory()->create(['is_admin' => true]);
+        $this->actingAs($admin)->get('/maestro')->assertOk()->assertSee('Cuenta Maestra');
     }
 
     public function test_demo_seeder_creates_four_businesses_across_branches_and_phases(): void

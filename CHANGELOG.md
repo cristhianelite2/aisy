@@ -1,6 +1,9 @@
 # Changelog — Aisy
 
 ## [0.2.2] - 2026-11-18
+### Added
+- **Cuenta Maestra Multi-Company en Odoo + Consola `/maestro`**: Comando `php artisan aisy:sync-odoo` que crea/actualiza la cuenta maestra `maestro@aisy.ceballosleon.com` en Odoo (`:8069`) con acceso multi-compañía a todos los negocios, y vista `/maestro` en Laravel (exclusiva para `is_admin`) con tabla global de negocios y registro de actividades.
+
 ### Changed
 - **Panel Admin 100% en Español y sin menciones visibles de Odoo**: Reemplazadas etiquetas en inglés (`Cita`, `Venta`, `Comanda`, `Promoción`, estados en español) y ocultas las referencias a Odoo manteniendo los IDs (`Ref. #...`).
 - **Calendario Interactivo de Citas (Estéticas)**: Integrado FullCalendar en español en `/{slug}/admin` con vista semanal predeterminada y selector de vista **Diario / Semanal / Mensual**.

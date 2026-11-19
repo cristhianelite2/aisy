@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BusinessAdminController;
 use App\Http\Controllers\BusinessLandingController;
+use App\Http\Controllers\MasterAdminController;
 use App\Http\Controllers\OnboardingController;
 use Illuminate\Support\Facades\Route;
 
@@ -10,6 +11,9 @@ use Illuminate\Support\Facades\Route;
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1')->name('login.submit');
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
+
+// Master Super-Admin Console
+Route::get('/maestro', [MasterAdminController::class, 'index'])->middleware('auth')->name('master.index');
 
 // Onboarding & Platform Entry
 Route::get('/', [OnboardingController::class, 'index'])->name('home');
